@@ -16,7 +16,7 @@ const form = useForm({
     email: "",
     password: "",
     password_confirmation: "",
-        subdomain: '',
+    subdomain: '',
 
     terms: false,
 });

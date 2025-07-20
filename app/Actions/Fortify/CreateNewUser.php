@@ -26,7 +26,7 @@ class CreateNewUser implements CreatesNewUsers
         Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'subdomain' => ['required', 'alpha' , 'string', 'max:255' , 'unique:domains,domain' ], // 'unique:domains' not working if we save subdomain with the full url because it bring for exampl eee.site.com not only eee
+            'subdomain' => ['required', 'alpha', 'max:255' , 'unique:domains,domain' ], // 'unique:domains' not working if we save subdomain with the full url because it bring for exampl eee.site.com not only eee
             'password' => $this->passwordRules(),
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
             ])->validate();

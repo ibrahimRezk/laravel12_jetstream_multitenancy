@@ -19,7 +19,7 @@ class CheckMainSiteAdminMiddleware
         if (auth()->user()->main_site_admin == false) {
             auth()->guard('web')->logout();
 
-            // tobe added after make toast work  and remove abort 
+            // to be added after make toast work  and remove abort 
             // return back()->with('error' , 'check your url for your tenant site');  
             // return redirect('/login');
 
