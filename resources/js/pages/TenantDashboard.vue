@@ -16,33 +16,29 @@ const breadcrumbs = [
 //     },
 // ];
 
-const cancelSubscription = ()=>{
-    router.delete(
-            route('tenant.cancelSubscription', {}),
-            {
-                preserveScroll: true,
-                preserveState: true,
-                onBefore: () => {
-                    // isDeleting.value = true;
-                },
-                onSuccess: () => {
-                    // deleteModal.value = false;
-                    // itemToDelete.value = [];
-                    // ids.value = [];
-                    // deleteMultipleItems.value = false;
-
-                },
-                onFinish: () => {
-                    // isDeleting.value = false;
-                    // usePage().props.menus.forEach((menu) => {
-                    //     menu.isActive
-                    //         ? (menu.open = true)
-                    //         : (menu.open = false);
-                    // });
-                },
-            }
-        );
-}
+const cancelSubscription = () => {
+    router.delete(route("tenant.cancelSubscription", {}), {
+        preserveScroll: true,
+        preserveState: true,
+        onBefore: () => {
+            // isDeleting.value = true;
+        },
+        onSuccess: () => {
+            // deleteModal.value = false;
+            // itemToDelete.value = [];
+            // ids.value = [];
+            // deleteMultipleItems.value = false;
+        },
+        onFinish: () => {
+            // isDeleting.value = false;
+            // usePage().props.menus.forEach((menu) => {
+            //     menu.isActive
+            //         ? (menu.open = true)
+            //         : (menu.open = false);
+            // });
+        },
+    });
+};
 </script>
 
 <template>
@@ -55,6 +51,7 @@ const cancelSubscription = ()=>{
                     class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
                 >
                     <!-- <PlaceholderPattern /> -->
+                     
 
                     <Link
                         :href="route('tenant.purchasePlans')"
@@ -66,25 +63,34 @@ const cancelSubscription = ()=>{
                         :href="route('tenant.getTenantSubscription')"
                         class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                     >
-                        view subscriptions 
+                        view subscriptions
                     </Link>
                     <Link
-                        :href="route('tenant.purchasePlans' , {type:'changePlan'})"
+                        :href="
+                            route('tenant.purchasePlans', {
+                                type: 'changePlan',
+                            })
+                        "
                         class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                     >
                         change paln
                     </Link>
 
+                    <Link
+                        :href="route('tenant.addUser')"
+                        class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
+                    >
+                        add tenant user..........................
+                    </Link>
 
-                    <form @submit.prevent="cancelSubscription" class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent">
-    
-    <button type="submit" class=" hover:cursor-pointer" >
-        cancel subscription
-    </button>
-</form>
-
-
-
+                    <form
+                        @submit.prevent="cancelSubscription"
+                        class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
+                    >
+                        <button type="submit" class="hover:cursor-pointer">
+                            cancel subscription
+                        </button>
+                    </form>
                 </div>
                 <div
                     class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"

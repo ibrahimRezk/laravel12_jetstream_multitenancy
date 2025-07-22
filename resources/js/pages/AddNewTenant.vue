@@ -65,14 +65,13 @@ const form = useForm({
 });
 
 const fillForm = () => {
-    form.name = props.item?.users[0]?.name
-    form.email = props.item?.users[0]?.email
+    form.name = props.item.name
+    form.email = props.item.email
     // form.password = props.item?.user?.password
     // form.password_confirmation = props.item?.user?.password_confirmation
     form.subdomain = props.item?.domains[0].domain
     form.plan_id = props.item?.subscription?.purchasePlan?.id
 
-console.log(props.item)
 
     // Object.keys(form).forEach((key) => {
     //     item[key] !== undefined && key !== "name"
@@ -96,7 +95,6 @@ const addNewSubscription = ()=>{
             } else if (errors.message) {
                 modalError.value = errors.message;
             } else {
-                console.log(errors)
                 modalError.value = "An error occurred while subscribing";
             }
         },
@@ -148,6 +146,8 @@ const submit = () => {
         addNewSubscription()
     }
 };
+
+
 
 
 watch(

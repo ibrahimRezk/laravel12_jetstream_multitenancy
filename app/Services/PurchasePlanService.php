@@ -35,6 +35,7 @@ class PurchasePlanService
                     'tenant_id' => $tenant->id,
                     'purchase_plan_id' => $plan->id,
                     'status' => 'active',
+                    'price' => $plan->price,
                     'trial_ends_at' => $trialEndsAt,
                     'ends_at' => $this->calculateEndDate($plan, $trialEndsAt),
                 ]);

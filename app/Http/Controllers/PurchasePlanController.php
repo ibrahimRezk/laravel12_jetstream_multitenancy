@@ -152,6 +152,7 @@ class PurchasePlanController extends Controller
             }
 
 // dd($subscription);
+
               return Inertia::render('Subscription' , [
                 'subscription' => $subscription 
                
@@ -187,6 +188,7 @@ class PurchasePlanController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Cancel tenant's subscription

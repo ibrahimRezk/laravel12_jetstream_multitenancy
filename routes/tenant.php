@@ -8,6 +8,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\PurchasePlanController;
 use App\Http\Middleware\CheckTenantUserMiddleware;
+use App\Http\Controllers\TenantDashboardController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
@@ -70,6 +71,11 @@ Route::middleware([
     Route::post('/tenant/subscribe/{plan}', [PurchasePlanController::class, 'subscribe'])->name('tenant.subscribe');
     Route::put('/tenant/subscription/{plan}', [PurchasePlanController::class, 'changeSubscription'])->name('tenant.changeSubscription');
     Route::delete('/tenant/cancel_subscription', [PurchasePlanController::class, 'cancelSubscription'])->name('tenant.cancelSubscription');
+
+
+    Route::get('addtenant' ,[ PurchasePlanController::class , 'addTenant'])->name('addTenant');
+    Route::get('addUser' ,[ TenantDashboardController::class , 'addUser'])->name('tenant.addUser');
+
 
 
 

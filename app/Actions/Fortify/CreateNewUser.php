@@ -40,7 +40,8 @@ class CreateNewUser implements CreatesNewUsers
 
             $tenant = Tenant::create(
                 [
-                    'tenancy_db_name' => $input['subdomain']  // must add this part other wise duplicate name error will appear
+                    'tenancy_db_name' => $input['subdomain'] ,  // must add this part other wise duplicate name error will appear
+                    'ownerId' => $user->id  // must add this part other wise duplicate name error will appear
                     ]
                 );
 

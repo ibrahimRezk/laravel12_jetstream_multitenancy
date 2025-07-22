@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed , watch} from "vue";
 import { router, useForm, usePage } from "@inertiajs/vue3";
-import SubscriptionCard  from "@/components/SubscriptionCard.vue"
 
 const props = defineProps({
     plans: {
@@ -190,7 +189,6 @@ onUnmounted(() => {
 
 <template>
 
-    <SubscriptionCard/>
     <div class="container mx-auto px-4 py-8">
         <!-- Header Section -->
         <div class="text-center mb-12">

@@ -154,7 +154,7 @@ const columns = [
         enableHiding: false,
     },
     {
-        accessorKey: "name",
+        accessorKey: "tenant name",
         header: ({ column }) => {
             return h(
                 Button,
@@ -163,11 +163,12 @@ const columns = [
                     onClick: () =>
                         column.toggleSorting(column.getIsSorted() === "asc"),
                 },
-                () => ["name", h(ArrowUpDown, { class: "ml-2 h-4 w-4" })]
+                () => ["tenant name", h(ArrowUpDown, { class: "ml-2 h-4 w-4" })]
             );
         },
         cell: ({ row }) =>
-            h("div", { class: "lowercase" }, row.original.name),
+            h("div", { class: "lowercase" }, row.original.users[0].name),
+        // cell: ({ row }) => h('div', { class: 'lowercase' }, row.getValue('tenancy_db_name')),
     },
     {
         accessorKey: "email",
@@ -184,7 +185,8 @@ const columns = [
             );
         },
         cell: ({ row }) =>
-            h("div", { class: "lowercase" }, row.original.email),
+            h("div", { class: "lowercase" }, row.original.users[0].email),
+        // cell: ({ row }) => h('div', { class: 'lowercase' }, row.getValue('tenancy_db_name')),
     },
 
     {
@@ -194,7 +196,7 @@ const columns = [
             h(
                 "div",
                 { class: "capitalize" },
-                row.original.status
+                row.original.subscriptions.at(-1).status
             ),
     },
     {
@@ -204,7 +206,7 @@ const columns = [
             h(
                 "div",
                 { class: "capitalize" },
-                row.original.plan
+                row.original.subscriptions.at(-1).purchasePlan.name
             ),
     },
     {
@@ -214,7 +216,7 @@ const columns = [
             h(
                 "div",
                 { class: "capitalize" },
-                row.original.interval
+                row.original.subscriptions.at(-1).purchasePlan.interval
             ),
     },
     {
@@ -224,7 +226,7 @@ const columns = [
             h(
                 "div",
                 { class: "capitalize" },
-                row.original.price
+                row.original.subscriptions.at(-1).price
             ),
     },
     {
@@ -234,7 +236,7 @@ const columns = [
             h(
                 "div",
                 { class: "capitalize" },
-                row.original.created_at
+                row.original.subscriptions.at(-1).created_at
             ),
     },
     {
@@ -244,7 +246,7 @@ const columns = [
             h(
                 "div",
                 { class: "capitalize" },
-                row.original.ends_at
+                row.original.subscriptions.at(-1).ends_at
             ),
     },
     {
@@ -254,7 +256,7 @@ const columns = [
             h(
                 "div",
                 { class: "capitalize" },
-                row.original.trial_ends_at
+                row.original.subscriptions.at(-1).trial_ends_at
             ),
     },
 
@@ -309,17 +311,21 @@ const isDialogOpen = ref(false);
 //     purchasePlan.value = row
 //     isDialogOpen.value = true
 //     action.value = 'view'
+//     // console.log(props.tenants[0]['domains'])
 
 // }
 const handleChangeSubscription = (row) => {
+    console.log(row);
     tenant.value = row;
     isDialogOpen.value = true;
     action.value = "edit";
+    //   console.log(row)
 };
 
 const isAlertDialogOpen = ref(false);
 const handleCncelSuvbscription = (row) => {
     isAlertDialogOpen.value = true;
+    //   console.log(row)
     itemsToBeDeleted.value = row.id; // tenant id
 };
 const action = ref("");
@@ -396,6 +402,8 @@ const checkAllItems = () => {
 const itemsToBeDeleted = ref({});
 
 const cancelTenants = () => {
+    console.log("i am here");
+
     router.delete(
         route("admin.cancelSubscription", {
             tenantIds: itemsToBeDeleted.value,
@@ -456,11 +464,11 @@ const showAlertModal = ref(false);
                         class="max-w-sm"
                         placeholder="Filter tenant name..."
                         :model-value="
-                            table.getColumn('name')?.getFilterValue()
+                            table.getColumn('tenant name')?.getFilterValue()
                         "
                         @update:model-value="
                             table
-                                .getColumn('name')
+                                .getColumn('tenant name')
                                 ?.setFilterValue($event)
                         "
                     />
@@ -606,7 +614,8 @@ const showAlertModal = ref(false);
                     </div> -->
                 </div>
 
-               
+                <div class="  flex justify-center  ">
+                <div class=" border rounded-full p-0.5 bg-red-500/10 ">
 
                     <Pagination
                         v-slot="{ page }"
@@ -633,7 +642,8 @@ const showAlertModal = ref(false);
                             <PaginationNext />
                         </PaginationContent>
                     </Pagination>
-
+                </div>
+                </div>
             </div>
         </div>
     </AppLayout>

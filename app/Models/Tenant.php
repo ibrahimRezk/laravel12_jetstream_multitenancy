@@ -11,6 +11,14 @@ class Tenant extends BaseTenant implements TenantWithDatabase
 {
     use HasDatabase, HasDomains;
 
+
+        public function owner()
+    {
+        return $this->belongsTo(User::class , 'ownerId');
+        
+    }
+
+
           public function users()
     {
         return $this->belongsToMany(User::class);

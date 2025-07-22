@@ -30,7 +30,7 @@ class TenantRequest extends FormRequest
         $passwordRule = $model ? ['nullable'] : ['required'];
 
         
-        $userId = $model ? Tenant::find($model)->users[0]->id : '' ;
+        $userId = $model ? Tenant::find($model)->ownerId : '' ;
         // dd($userId);
         $subDomain = $model ? Tenant::find($model)->domains[0]->id : '' ;
 

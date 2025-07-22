@@ -1,24 +1,29 @@
 <script setup>
-import { useSubscription } from '@/composables/userSubscription';
 
-// import { useSubscription } from "@/composables/useSubscription";
-// import { useSubscription } from "@/composables/userSubscription";
+import { useSubscription } from "@/composables/useSubscription";
+import { onMounted } from "vue";
 
 const props = defineProps({
     subscription: {
         type: Object,
         default: null,
     },
+    siteType: String
 });
 
 const emit = defineEmits(["view-plans", "change-plan", "cancel-subscription"]);
 
 const {
+    // init,
+    fetchTenantSubscription,
     formatPrice,
     formatFeature,
     getDaysUntilExpiry,
     getDaysUntilTrialExpiry,
 } = useSubscription();
+
+// onMounted(()=>  init())
+onMounted(()=>  fetchTenantSubscription(props.siteType , props.subscription.tenant_id))
 
 const formatStatus = (status) => {
     return status.charAt(0).toUpperCase() + status.slice(1).replace("_", " ");
@@ -95,18 +100,18 @@ const formatDate = (dateString) => {
 
             <div class="mb-4">
                 <h4 class="text-xl font-bold text-gray-900">
-                    {{ subscription.plan.name }}
+                    {{ subscription.purchasePlan.name }}
                 </h4>
-                <p class="text-gray-600">{{ subscription.plan.description }}</p>
+                <p class="text-gray-600">{{ subscription.purchasePlan.description }}</p>
             </div>
 
             <div class="mb-4">
                 <div class="flex items-baseline">
                     <span class="text-2xl font-bold text-gray-900">
-                        ${{ formatPrice(subscription.plan.price) }}
+                        ${{ formatPrice(subscription.purchasePlan.price) }}
                     </span>
                     <span class="text-gray-600 ml-1"
-                        >/ {{ subscription.plan.interval }}</span
+                        >/ {{ subscription.purchasePlan.interval }}</span
                     >
                 </div>
             </div>
@@ -159,7 +164,7 @@ const formatDate = (dateString) => {
                 <h5 class="text-sm font-medium text-gray-900 mb-2">Features</h5>
                 <ul class="space-y-1">
                     <li
-                        v-for="feature in subscription.plan.features"
+                        v-for="feature in subscription.purchasePlan.features"
                         :key="feature"
                         class="flex items-center text-sm text-gray-600"
                     >

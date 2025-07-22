@@ -33,10 +33,14 @@ class TenantSubscriptionResource extends JsonResource
             'updated_at' => $this->when($this->updated_at, function () {
                 return $this->updated_at->isoFormat('Do MMMM YYYY , h:mm a');
             }),
-            'ends_at' => $this->when($this->ends_at, function () {
+
+            'ends_at' => $this->ends_at,
+            'ends_at_formatted' => $this->when($this->ends_at, function () {
                 return $this->ends_at->isoFormat('Do MMMM YYYY , h:mm a');
             }),
-            'trial_ends_at' => $this->when($this->trial_ends_at, function () {
+
+            'trial_ends_at' =>$this->trial_ends_at,
+            'trial_ends_at_formatted' => $this->when($this->trial_ends_at, function () {
                 return $this->trial_ends_at->isoFormat('Do MMMM YYYY , h:mm a');
             }),
             
