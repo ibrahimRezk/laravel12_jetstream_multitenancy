@@ -35,7 +35,7 @@ class SubscriptionWelcome extends Mailable
         
         
         return new Envelope(
-            subject: 'Welcome to ' . $this->subscription->purchasePlan->name . ' Plan!',
+            subject: 'Welcome to ' . $this->subscription->plan->name . ' Plan!',
         );
        
     }
@@ -45,8 +45,8 @@ class SubscriptionWelcome extends Mailable
      */
     public function content(): Content
     {
-        $mailData['planName'] = $this->subscription->purchasePlan->name;
-        $mailData['features'] = $this->subscription->purchasePlan->features;
+        $mailData['planName'] = $this->subscription->plan->name;
+        $mailData['features'] = $this->subscription->plan->features;
         $mailData['trialEndsAt'] = $this->subscription->trial_ends_at;
         $mailData['endsAt'] = $this->subscription->ends_at;
 

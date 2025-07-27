@@ -2,6 +2,23 @@
 import AppLayout from "@/layouts/AppLayout.vue";
 import { Link, Head, router } from "@inertiajs/vue3";
 import PlaceholderPattern from "../components/PlaceholderPattern.vue";
+import { useSubscription } from "@/composables/useSubscription";
+import Button from "@/components/ui/button/Button.vue";
+import { onMounted, ref, watch } from "vue";
+import axios from "axios";
+
+const props = defineProps({
+    tenantSubscription : Object ,
+})
+
+const {
+    fetchPlans,
+    // currentActiveSubscription,
+    fetchTenantSubscription,
+    cancelSubscription,
+} = useSubscription();
+
+
 
 const breadcrumbs = [
     {
@@ -16,29 +33,29 @@ const breadcrumbs = [
 //     },
 // ];
 
-const cancelSubscription = () => {
-    router.delete(route("tenant.cancelSubscription", {}), {
-        preserveScroll: true,
-        preserveState: true,
-        onBefore: () => {
-            // isDeleting.value = true;
-        },
-        onSuccess: () => {
-            // deleteModal.value = false;
-            // itemToDelete.value = [];
-            // ids.value = [];
-            // deleteMultipleItems.value = false;
-        },
-        onFinish: () => {
-            // isDeleting.value = false;
-            // usePage().props.menus.forEach((menu) => {
-            //     menu.isActive
-            //         ? (menu.open = true)
-            //         : (menu.open = false);
-            // });
-        },
-    });
-};
+// const cancelSubscription = () => {
+//     router.delete(route("tenant.cancelSubscription", {}), {
+//         preserveScroll: true,
+//         preserveState: true,
+//         onBefore: () => {
+//             // isDeleting.value = true;
+//         },
+//         onSuccess: () => {
+//             // deleteModal.value = false;
+//             // itemToDelete.value = [];
+//             // ids.value = [];
+//             // deleteMultipleItems.value = false;
+//         },
+//         onFinish: () => {
+//             // isDeleting.value = false;
+//             // usePage().props.menus.forEach((menu) => {
+//             //     menu.isActive
+//             //         ? (menu.open = true)
+//             //         : (menu.open = false);
+//             // });
+//         },
+//     });
+// };
 </script>
 
 <template>
@@ -53,42 +70,52 @@ const cancelSubscription = () => {
                     <!-- <PlaceholderPattern /> -->
                      
 
-                    <Link
-                        :href="route('tenant.purchasePlans')"
-                        class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
+                    <!-- :href="route('tenant.plans')" -->
+                    <Button variant="outline" v-show="!props.tenantSubscription"
+                    @click="fetchPlans('tenant')"
+                    class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:cursor-pointer"
                     >
-                        choose a paln
-                    </Link>
-                    <Link
+                    choose a paln <span class=" text-red-500">..........(only view if no subscription)</span>
+                </Button>
+                <!-- :href="route('tenant.getTenantSubscription')" -->
+                <Button v-show="props.tenantSubscription" variant="outline" 
+                @click="fetchTenantSubscription('tenant' ,props.tenantSubscription?.tenant_id )"
+                        class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:cursor-pointer"
+                    >
+                        view subscriptions <span class=" text-green-500">............. (only view if subscription exists)</span>
+                    </Button>
+                     <!-- <Link v-show="currentActiveSubscription"
                         :href="route('tenant.getTenantSubscription')"
                         class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                     >
-                        view subscriptions
-                    </Link>
-                    <Link
+                        view subscriptions <span class=" text-green-500">............. (only view if subscription exists)</span>
+                    </Link> -->
+
+
+                    <Link v-show="props.tenantSubscription"
                         :href="
-                            route('tenant.purchasePlans', {
+                            route('tenant.plans', {
                                 type: 'changePlan',
                             })
                         "
                         class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                     >
-                        change paln
+                        change paln <span class=" text-green-500">............. (only view if subscription exists)</span>
                     </Link>
 
                     <Link
                         :href="route('tenant.addUser')"
                         class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                     >
-                        add tenant user..........................
+                        add tenant user <span class=" text-orange-500">........(add random user)</span>
                     </Link>
 
-                    <form
-                        @submit.prevent="cancelSubscription"
+                    <form v-show="props.tenantSubscription"
+                        @submit.prevent="cancelSubscription('tenant' , props.tenantSubscription?.tenant_id)"
                         class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                     >
                         <button type="submit" class="hover:cursor-pointer">
-                            cancel subscription
+                            cancel subscription <span class=" text-green-500">............. (only view if subscription exists)</span>
                         </button>
                     </form>
                 </div>

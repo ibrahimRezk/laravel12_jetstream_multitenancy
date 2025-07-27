@@ -2,7 +2,7 @@
 import AppLayout from "@/layouts/AppLayout.vue";
 import { Link, Head, router } from "@inertiajs/vue3";
 import PlaceholderPattern from "../components/PlaceholderPattern.vue";
-import AddNewTenant from "./AddNewTenant.vue";
+import AddEditTenant from "./AddEditTenant.vue";
 import { MoreHorizontal } from "lucide-vue-next";
 
 import {
@@ -98,7 +98,6 @@ const breadcrumbs = [
 const tenants = toRef(props, "tenants");
 // const data = computed(()=>  tenants.value.data)
 
-
 // const data = [
 //   {
 //     id: 'm5gr84i9',
@@ -133,25 +132,32 @@ const tenants = toRef(props, "tenants");
 // ]
 
 const columns = [
+    // no need for select all
+    // {  
+    //     id: "select", // this  for show specefic items or hid them from top right column menu
+    //     header: ({ table }) =>
+    //         h(Checkbox, {
+    //             modelValue:
+    //                 table.getIsAllPageRowsSelected() ||
+    //                 (table.getIsSomePageRowsSelected() && "indeterminate"),
+    //             "onUpdate:modelValue": (value) =>
+    //                 table.toggleAllPageRowsSelected(!!value),
+    //             ariaLabel: "Select all",
+    //         }),
+    //     cell: ({ row }) =>
+    //         h(Checkbox, {
+    //             modelValue: row.getIsSelected(),
+    //             "onUpdate:modelValue": (value) => row.toggleSelected(!!value),
+    //             ariaLabel: "Select row",
+    //         }),
+    //     enableSorting: false,
+    //     enableHiding: false,
+    // },
     {
-        id: "select", // this  for show specefic items or hid them from top right column menu
-        header: ({ table }) =>
-            h(Checkbox, {
-                modelValue:
-                    table.getIsAllPageRowsSelected() ||
-                    (table.getIsSomePageRowsSelected() && "indeterminate"),
-                "onUpdate:modelValue": (value) =>
-                    table.toggleAllPageRowsSelected(!!value),
-                ariaLabel: "Select all",
-            }),
+        accessorKey: "#",
+         header: "#",
         cell: ({ row }) =>
-            h(Checkbox, {
-                modelValue: row.getIsSelected(),
-                "onUpdate:modelValue": (value) => row.toggleSelected(!!value),
-                ariaLabel: "Select row",
-            }),
-        enableSorting: false,
-        enableHiding: false,
+            h("div", { class: "capitalize" }, row.index + 1),
     },
     {
         accessorKey: "name",
@@ -166,8 +172,7 @@ const columns = [
                 () => ["name", h(ArrowUpDown, { class: "ml-2 h-4 w-4" })]
             );
         },
-        cell: ({ row }) =>
-            h("div", { class: "lowercase" }, row.original.name),
+        cell: ({ row }) => h("div", { class: "lowercase" }, row.original.name),
     },
     {
         accessorKey: "email",
@@ -177,85 +182,54 @@ const columns = [
                 {
                     variant: "ghost",
                     onClick: () =>
-
                         column.toggleSorting(column.getIsSorted() === "asc"),
                 },
                 () => ["email", h(ArrowUpDown, { class: "ml-2 h-4 w-4" })]
             );
         },
-        cell: ({ row }) =>
-            h("div", { class: "lowercase" }, row.original.email),
+        cell: ({ row }) => h("div", { class: "lowercase" }, row.original.email),
     },
 
     {
         accessorKey: "subscription status",
         header: "Subscription Status",
         cell: ({ row }) =>
-            h(
-                "div",
-                { class: "capitalize" },
-                row.original.status
-            ),
+            h("div", { class: "capitalize" }, row.original.status),
     },
     {
         accessorKey: "plan",
         header: "plan",
-        cell: ({ row }) =>
-            h(
-                "div",
-                { class: "capitalize" },
-                row.original.plan
-            ),
+        cell: ({ row }) => h("div", { class: "capitalize" }, row.original.plan),
     },
     {
         accessorKey: "interval",
         header: "interval",
         cell: ({ row }) =>
-            h(
-                "div",
-                { class: "capitalize" },
-                row.original.interval
-            ),
+            h("div", { class: "capitalize" }, row.original.interval),
     },
     {
         accessorKey: "price",
         header: "price",
         cell: ({ row }) =>
-            h(
-                "div",
-                { class: "capitalize" },
-                row.original.price
-            ),
+            h("div", { class: "capitalize" }, row.original.price),
     },
     {
         accessorKey: "created at",
         header: "Created at",
         cell: ({ row }) =>
-            h(
-                "div",
-                { class: "capitalize" },
-                row.original.created_at
-            ),
+            h("div", { class: "capitalize" }, row.original.created_at),
     },
     {
         accessorKey: "ends at",
         header: "Ends at",
         cell: ({ row }) =>
-            h(
-                "div",
-                { class: "capitalize" },
-                row.original.ends_at
-            ),
+            h("div", { class: "capitalize" }, row.original.ends_at),
     },
     {
         accessorKey: "trial ends at",
         header: "Trial Ends At",
         cell: ({ row }) =>
-            h(
-                "div",
-                { class: "capitalize" },
-                row.original.trial_ends_at
-            ),
+            h("div", { class: "capitalize" }, row.original.trial_ends_at),
     },
 
     //   {
@@ -306,7 +280,7 @@ const columns = [
 ];
 const isDialogOpen = ref(false);
 // const handleGetTenantSubscription = (row) => {
-//     purchasePlan.value = row
+//     plan.value = row
 //     isDialogOpen.value = true
 //     action.value = 'view'
 
@@ -374,18 +348,17 @@ watch(
     () => checkAllItems()
 );
 
-
 const onPageChange = (page) => {
-    router.get(route('admin.getTenants' , {page:page}))
+    router.get(route("admin.getTenants", { page: page }));
 };
-
-
 
 const checkedItems = ref([]);
 const checkAllItems = () => {
     checkedItems.value = [];
 
-    Object.keys(rowSelection.value).forEach((key) =>  checkedItems.value.push(tenants.value.data[key]["id"]) );
+    Object.keys(rowSelection.value).forEach((key) =>
+        checkedItems.value.push(tenants.value.data[key]["id"])
+    );
 
     // itemsToBeDeleted.value = checkedItems.value;
     // checkedItems.value.length > 0
@@ -445,7 +418,7 @@ const showAlertModal = ref(false);
         <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
             <div class="w-full p-2 rounded bg-background border">
                 <div class="flex gap-2 items-center py-4">
-                    <AddNewTenant
+                    <AddEditTenant
                         :plans="props.plans"
                         :item="tenant"
                         :isDialogOpen
@@ -455,13 +428,9 @@ const showAlertModal = ref(false);
                     <Input
                         class="max-w-sm"
                         placeholder="Filter tenant name..."
-                        :model-value="
-                            table.getColumn('name')?.getFilterValue()
-                        "
+                        :model-value="table.getColumn('name')?.getFilterValue()"
                         @update:model-value="
-                            table
-                                .getColumn('name')
-                                ?.setFilterValue($event)
+                            table.getColumn('name')?.setFilterValue($event)
                         "
                     />
 
@@ -606,34 +575,31 @@ const showAlertModal = ref(false);
                     </div> -->
                 </div>
 
-               
+                <Pagination
+                    v-slot="{ page }"
+                    :items-per-page="props.tenants.meta.per_page"
+                    :total="props.tenants.meta.total"
+                    :default-page="props.tenants.meta.current_page"
+                    @update:page="onPageChange"
+                >
+                    <PaginationContent v-slot="{ items }">
+                        <PaginationPrevious />
 
-                    <Pagination
-                        v-slot="{ page }"
-                        :items-per-page="props.tenants.meta.per_page"
-                        :total="props.tenants.meta.total"
-                        :default-page="props.tenants.meta.current_page"
-                         @update:page="onPageChange"
-                    >
-                        <PaginationContent v-slot="{ items }">
-                            <PaginationPrevious />
-    
-                            <template v-for="(item, index) in items" :key="index">
-                                <PaginationItem
-                                    v-if="item.type === 'page'"
-                                    :value="item.value"
-                                    :is-active="item.value === page"
-                                >
-                                    {{ item.value }}
-                                </PaginationItem>
-                            </template>
-    
-                            <PaginationEllipsis :index="4" />
-    
-                            <PaginationNext />
-                        </PaginationContent>
-                    </Pagination>
+                        <template v-for="(item, index) in items" :key="index">
+                            <PaginationItem
+                                v-if="item.type === 'page'"
+                                :value="item.value"
+                                :is-active="item.value === page"
+                            >
+                                {{ item.value }}
+                            </PaginationItem>
+                        </template>
 
+                        <PaginationEllipsis :index="4" />
+
+                        <PaginationNext />
+                    </PaginationContent>
+                </Pagination>
             </div>
         </div>
     </AppLayout>

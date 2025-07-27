@@ -1,22 +1,16 @@
 <script setup>
-import { ref, computed , watch} from "vue";
-import { router, useForm, usePage } from "@inertiajs/vue3";
+import { ref, computed } from "vue";
+import { useForm, usePage } from "@inertiajs/vue3";
 
 const props = defineProps({
     plans: {
         type: Array,
         default: () => [],
     },
-    type: {
-        type: String,
-        default: () => null,
+    tenants: {
+        type: Array,
+        default: () => [],
     },
-    
-    errors: {
-        type: Object,
-        default: () => {},
-    },
-
 });
 
 const page = usePage();
@@ -26,12 +20,10 @@ const showModal = ref(false);
 const selectedPlan = ref(null);
 const modalError = ref("");
 
-// // Form for subscription
-// const form = useForm({
-//     tenant_id: "",
-// });
-
-const processing = ref(false)
+// Form for subscription
+const form = useForm({
+    tenant_id: "",
+});
 
 // Computed properties
 const toast = computed(() => {
@@ -56,11 +48,6 @@ const toast = computed(() => {
     };
 });
 
-// watch(()=> usePage().props.flash.error, 
-// ()=> usePage().props.flash.error != '' ? processing.value = false : '')
-// watch(()=> usePage().props.flash.error, 
-// ()=> usePage().props.flash.error != '' ? showModal.value = false : '')
-
 // Methods
 const formatPrice = (price) => {
     return parseFloat(price).toFixed(2);
@@ -75,100 +62,54 @@ const formatFeature = (feature) => {
 
 const openSubscriptionModal = (plan) => {
     selectedPlan.value = plan;
-    // form.tenant_id = "";
-    // form.clearErrors();
+    form.tenant_id = "";
+    form.clearErrors();
     modalError.value = "";
     showModal.value = true;
 };
 
 const closeModal = () => {
-    if (processing.value == true ) return;
+    if (form.processing) return;
 
     showModal.value = false;
     selectedPlan.value = null;
-    // form.reset();
-    // form.clearErrors();
+    form.reset();
+    form.clearErrors();
     modalError.value = "";
 };
 
-
-
 const confirmSubscription = () => {
+    if (!form.tenant_id) {
+        modalError.value = "Please select a tenant";
+        return;
+    }
 
-props.type == null ? confirm() : change()
-
-};
-const confirm =()=> {
     if (!selectedPlan.value) {
         modalError.value = "No plan selected";
         return;
     }
-    // if (!form.tenant_id) {
-    //     modalError.value = "Please select a tenant";
-    //     return;
-    // }
 
     modalError.value = "";
 
-    processing.value = true
-
-    router.post(route(`tenant.subscribe` , selectedPlan.value.id),{}, {
+    form.post(`/subscripe/${selectedPlan.value.id}`, { 
         preserveState: true,
         preserveScroll: true,
         onSuccess: () => {
-                processing.value = false
-
             closeModal();
             // Optional: redirect to tenant dashboard
             // You can handle this in your backend controller instead
         },
         onError: (errors) => {
-            console.log(errors)
-            // if (errors.tenant_id) {
-            //     modalError.value = errors.tenant_id;
-            // } else
-             if (errors) {
-                modalError.value = errors.error;
+            if (errors.tenant_id) {
+                modalError.value = errors.tenant_id;
+            } else if (errors.message) {
+                modalError.value = errors.message;
             } else {
-                modalError.value = "An error occurred while subscribing";
+                modalError.value = "An error occurred while subscriping";
             }
         },
     });
-}
-
-const change = ()=>{
-     if (!selectedPlan.value) {
-        modalError.value = "No plan selected";
-        return;
-    }
-
-    modalError.value = "";
-
-    processing.value = true
-
-    router.put(route(`tenant.changeSubscription` , selectedPlan.value.id),{}, {
-        preserveState: true,
-        preserveScroll: true,
-        onSuccess: () => {
-                processing.value = false
-
-            closeModal();
-            // Optional: redirect to tenant dashboard
-            // You can handle this in your backend controller instead
-        },
-        onError: (errors) => {
-            console.log(errors)
-            // if (errors.tenant_id) {
-            //     modalError.value = errors.tenant_id;
-            // } else
-             if (errors) {
-                modalError.value = errors.error;
-            } else {
-                modalError.value = "An error occurred while subscribing";
-            }
-        },
-    });
-}
+};
 
 // Keyboard event listeners
 const handleEscape = (e) => {
@@ -190,7 +131,6 @@ onUnmounted(() => {
 <template>
     <div class="container mx-auto px-4 py-8">
         <!-- Header Section -->
-         
         <div class="text-center mb-12">
             <h1 class="text-4xl font-bold text-gray-900 mb-4">
                 Choose Your Plan
@@ -272,10 +212,10 @@ onUnmounted(() => {
                         </li>
                     </ul>
 
-                    <!-- Subscribe Button -->
+                    <!-- SSubscripe Button -->
                     <button
                         @click="openSubscriptionModal(plan)"
-                        :disabled="processing"
+                        :disabled="form.processing"
                         class="w-full font-bold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         :class="
                             index === 1
@@ -284,7 +224,7 @@ onUnmounted(() => {
                         "
                     >
                         <span
-                            v-if="processing && selectedPlan?.id === plan.id"
+                            v-if="form.processing && selectedPlan?.id === plan.id"
                         >
                             <svg
                                 class="inline w-4 h-4 mr-2 animate-spin"
@@ -325,24 +265,41 @@ onUnmounted(() => {
                     @click.stop
                 >
                     <div class="mt-3 text-center">
-                       
-                        
+                        <h3 class="text-lg font-medium text-gray-900">
+                            Select Tenant
+                        </h3>
+                        <div class="mt-2 px-7 py-3">
+                            <select
+                                v-model="form.tenant_id"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                :disabled="form.processing"
+                            >
+                                <option value="">Select a tenant...</option>
+                                <option
+                                    v-for="tenant in tenants"
+                                    :key="tenant.id"
+                                    :value="tenant.id"
+                                >
+                                    {{ tenant.name || tenant.id }}
+                                </option>
+                            </select>
+                        </div>
 
                         <!-- Error Message -->
                         <div
-                            v-if="modalError "
+                            v-if="modalError || form.errors.tenant_id"
                             class="mt-2 text-red-600 text-sm"
                         >
-                            {{ modalError }}
+                            {{ modalError || form.errors.tenant_id }}
                         </div>
 
                         <div class="items-center px-4 py-3">
                             <button
                                 @click="confirmSubscription"
-                                :disabled=" processing"
+                                :disabled="!form.tenant_id || form.processing"
                                 class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <span v-if="processing">
+                                <span v-if="form.processing">
                                     <svg
                                         class="inline w-4 h-4 mr-2 animate-spin"
                                         fill="none"
@@ -368,7 +325,7 @@ onUnmounted(() => {
                             </button>
                             <button
                                 @click="closeModal"
-                                :disabled="processing"
+                                :disabled="form.processing"
                                 class="mt-2 px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:opacity-50"
                             >
                                 Cancel

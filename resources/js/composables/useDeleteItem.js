@@ -1,6 +1,6 @@
 import { ref } from "vue";
 import { router } from "@inertiajs/vue3";
-import { trans } from "laravel-vue-i18n";
+// import { trans } from "laravel-vue-i18n";
 import { usePage } from "@inertiajs/vue3";
 
 export default function (params) {

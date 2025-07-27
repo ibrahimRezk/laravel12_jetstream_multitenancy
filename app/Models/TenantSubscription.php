@@ -11,7 +11,8 @@ class TenantSubscription extends Model
 
     protected $fillable = [
         'tenant_id',
-        'purchase_plan_id',
+        'plan_id',
+        'notes',
         'status',
         'price',
         'trial_ends_at',
@@ -27,12 +28,12 @@ class TenantSubscription extends Model
 
     public function tenant()
     {
-        return $this->belongsTo(config('tenancy.tenant_model'));
+        return $this->belongsTo(Tenant::class);
     }
 
-    public function purchasePlan()
+    public function plan()
     {
-        return $this->belongsTo(PurchasePlan::class);
+        return $this->belongsTo(Plan::class);
     }
 
     public function isActive()

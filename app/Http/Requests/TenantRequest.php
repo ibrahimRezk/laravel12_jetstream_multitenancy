@@ -48,7 +48,7 @@ class TenantRequest extends FormRequest
                 'password' => ['bail', ...$passwordRule, Password::defaults()],
                 'password_confirmation' => ['bail', ...$passwordRule, 'same:password'],
 
-                'plan_id' => ['required', 'exists:purchase_plans,id']
+                'plan_id' => ['required', 'exists:plans,id']
         ];
     }
 }

@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('tenant_subscriptions', function (Blueprint $table) {
             $table->id();
+            $table->text('notes')->nullable();
             $table->decimal('price' , 12 ,2)->default(0);
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('purchase_plan_id')->constrained()->onDelete('cascade');
+            $table->foreignId('plan_id')->constrained()->onDelete('cascade');
             $table->enum('status', ['active', 'inactive', 'cancelled', 'expired'])->default('active');
             $table->timestamp('trial_ends_at')->nullable();
             $table->timestamp('ends_at')->nullable();

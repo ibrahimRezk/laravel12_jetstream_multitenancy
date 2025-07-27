@@ -43,6 +43,18 @@ return [
             'after_commit' => false,
         ],
 
+                // Dedicated queue for subscription processing
+    'subscription-redis' => [
+        'driver' => 'redis',
+        'connection' => 'default',
+        'queue' => 'subscriptions',
+        'retry_after' => 300,
+        'block_for' => null,
+    ],
+
+
+
+
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => env('BEANSTALKD_QUEUE_HOST', 'localhost'),
@@ -71,6 +83,9 @@ return [
             'block_for' => null,
             'after_commit' => false,
         ],
+
+
+
 
     ],
 

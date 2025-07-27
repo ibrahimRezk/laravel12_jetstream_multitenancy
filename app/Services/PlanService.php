@@ -1,27 +1,39 @@
-<?php 
+<?php
 
 
 namespace App\Services;
 
 use Carbon\Carbon;
 use App\Models\Tenant;
-use App\Models\PurchasePlan;
+use App\Models\Plan;
 use App\Models\TenantSubscription;
 use Illuminate\Support\Facades\DB;
 use App\Events\SubscriptionCreated;
 use Illuminate\Support\Facades\Log;
 
-class PurchasePlanService
+class PlanService
 {
     public function getAvailablePlans()
     {
-        return PurchasePlan::where('is_active', true)
+        return Plan::where('is_active', true)
             ->orderBy('sort_order')
             ->orderBy('price')
             ->get();
     }
 
-    public function subscribeTenant(Tenant $tenant, PurchasePlan $plan, $trialDays = null)
+    public function getPopularPlan()
+    {
+        return TenantSubscription::select('plan_id', DB::raw('COUNT(plan_id) as occurrences'))
+            ->where('status', 'active')
+            ->where('ends_at', '>', Carbon::now())
+            ->groupBy('plan_id')
+            ->orderByDesc('occurrences')
+            ->limit(1)
+            ->first();
+    }
+
+
+    public function subscripeTenant(Tenant $tenant, Plan $plan, $trialDays = null)
     {
         try {
             return DB::transaction(function () use ($tenant, $plan, $trialDays) {
@@ -33,14 +45,14 @@ class PurchasePlanService
 
                 $subscription = TenantSubscription::create([
                     'tenant_id' => $tenant->id,
-                    'purchase_plan_id' => $plan->id,
+                    'plan_id' => $plan->id,
                     'status' => 'active',
                     'price' => $plan->price,
                     'trial_ends_at' => $trialEndsAt,
                     'ends_at' => $this->calculateEndDate($plan, $trialEndsAt),
                 ]);
 
-                Log::info('Tenant subscribed to plan', [
+                Log::info('Tenant subscriped to plan', [
                     'tenant_id' => $tenant->id,
                     'plan_id' => $plan->id,
                     'subscription_id' => $subscription->id
@@ -56,7 +68,7 @@ class PurchasePlanService
                 return $subscription;
             });
         } catch (\Exception $e) {
-            Log::error('Failed to subscribe tenant to plan', [
+            Log::error('Failed to subscripe tenant to plan', [
                 'tenant_id' => $tenant->id,
                 'plan_id' => $plan->id,
                 'error' => $e->getMessage()
@@ -75,7 +87,7 @@ class PurchasePlanService
                         'status' => 'cancelled',
                         'ends_at' => Carbon::now()
                     ]);
-                    
+
                     Log::info('Tenant subscription cancelled', [
                         'tenant_id' => $tenant->id,
                         'subscription_id' => $subscription->id
@@ -96,19 +108,19 @@ class PurchasePlanService
     {
         try {
             return DB::transaction(function () use ($subscription) {
-                $plan = $subscription->purchasePlan;
+                $plan = $subscription->plan;
                 $newEndDate = $this->calculateEndDate($plan, $subscription->ends_at);
-                
+
                 $subscription->update([
                     'ends_at' => $newEndDate,
                     'status' => 'active'
                 ]);
-                
+
                 Log::info('Subscription renewed', [
                     'subscription_id' => $subscription->id,
                     'new_end_date' => $newEndDate
                 ]);
-                
+
                 return $subscription;
             });
         } catch (\Exception $e) {
@@ -130,10 +142,10 @@ class PurchasePlanService
             ]);
     }
 
-    private function calculateEndDate(PurchasePlan $plan, $trialEndsAt = null)
+    private function calculateEndDate(Plan $plan, $trialEndsAt = null)
     {
         $startDate = $trialEndsAt ?? Carbon::now();
-        
+
         switch ($plan->interval) {
             case 'monthly':
                 return $startDate->addMonth();

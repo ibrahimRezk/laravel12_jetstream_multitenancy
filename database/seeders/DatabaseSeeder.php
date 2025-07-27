@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
 
 
         $this->call([
-            PurchasePlanSeeder::class,
+            PlanSeeder::class,
         ]);
 
     }

@@ -7,7 +7,7 @@
 <body>
     <h1>Welcome to {{ $planName }}!</h1>
     
-    <p>Thank you for subscribing to our {{ $planName }} plan.</p>
+    <p>Thank you for subscriping to our {{ $planName }} plan.</p>
     
     <h2>Your Plan Features:</h2>
     <ul>

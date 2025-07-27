@@ -3,6 +3,7 @@ import { ref, computed , watch} from "vue";
 import { router, useForm, usePage } from "@inertiajs/vue3";
 import SubscriptionCard from "@/components/SubscriptionCard.vue";
 
+
 const props = defineProps({
     subscription: {
         type: Object,
@@ -10,7 +11,6 @@ const props = defineProps({
     },
 
 });
-
 
 
 </script>

@@ -100,18 +100,18 @@ const formatDate = (dateString) => {
 
             <div class="mb-4">
                 <h4 class="text-xl font-bold text-gray-900">
-                    {{ subscription.purchasePlan.name }}
+                    {{ subscription.plan.name }}
                 </h4>
-                <p class="text-gray-600">{{ subscription.purchasePlan.description }}</p>
+                <p class="text-gray-600">{{ subscription.plan.description }}</p>
             </div>
 
             <div class="mb-4">
                 <div class="flex items-baseline">
                     <span class="text-2xl font-bold text-gray-900">
-                        ${{ formatPrice(subscription.purchasePlan.price) }}
+                        ${{ formatPrice(subscription.plan.price) }}
                     </span>
                     <span class="text-gray-600 ml-1"
-                        >/ {{ subscription.purchasePlan.interval }}</span
+                        >/ {{ subscription.plan.interval }}</span
                     >
                 </div>
             </div>
@@ -164,7 +164,7 @@ const formatDate = (dateString) => {
                 <h5 class="text-sm font-medium text-gray-900 mb-2">Features</h5>
                 <ul class="space-y-1">
                     <li
-                        v-for="feature in subscription.purchasePlan.features"
+                        v-for="feature in subscription.plan.features"
                         :key="feature"
                         class="flex items-center text-sm text-gray-600"
                     >

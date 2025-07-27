@@ -1,11 +1,14 @@
 <?php
 
-use App\Http\Controllers\AdminPurchasePlanController;
+use App\Http\Controllers\AdminPlanController;
+use App\Http\Controllers\AdminSubscriptionController;
+use App\Http\Controllers\AdminTenantsController;
+use App\Models\TenantSubscription;
 use App\Models\User;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
-use App\Http\Controllers\PurchasePlanController;
+use App\Http\Controllers\PlanController;
 use App\Http\Middleware\CheckMainSiteAdminMiddleware;
 
 
@@ -16,6 +19,22 @@ use App\Http\Middleware\CheckMainSiteAdminMiddleware;
 foreach (config('tenancy.central_domains') as $domain) {
     Route::domain($domain)->group(function () {
         // your actual routes
+
+
+        // Webhook routes - exclude from CSRF protection
+Route::group(['prefix' => 'webhooks', 'middleware' => ['webhook.verify']], function () {
+    Route::post('/stripe', [WebhookController::class, 'handleStripe'])->name('webhooks.stripe');
+    Route::post('/paypal', [WebhookController::class, 'handlePaypal'])->name('webhooks.paypal');
+});
+
+// In app/Http/Kernel.php, exclude webhook routes from CSRF:
+// protected $except = [
+//     'webhooks/*',
+// ];
+
+
+
+
 
         Route::get('/', function () {
             return Inertia::render('Welcome', [
@@ -32,28 +51,51 @@ foreach (config('tenancy.central_domains') as $domain) {
             'verified',
             CheckMainSiteAdminMiddleware::class
         ])->group(function () {
+
+
+            // Route::get('/dashboard', [DashboardController::class , 'handle'])->middleware('user.type.router');
+
             Route::get('/dashboard', function () {
-                if(auth()->user()->main_site_admin == true)
-                {
-                    return Inertia::render('AdminDashboard');
-                }else{
-                    return Inertia::render('TenantDashboard');
-                }
+                // if(auth()->user()->main_site_admin == true)
+                // {
+                return Inertia::render('AdminDashboard');
+                // }else{
+                //     return Inertia::render('TenantDashboard');
+                // }
             })->name('dashboard');
+
 
 
             Route::middleware(['web'])->group(function () {
 
-                
+
                 // Tenant subscription management
 
-                Route::get('/admin/tenants', [AdminPurchasePlanController::class, 'getTenants'])->name('admin.getTenants');
+                Route::get('/admin/tenants', [AdminTenantsController::class, 'getTenants'])->name('admin.getTenants');
 
-                Route::get('/admin/purchase-plans', [AdminPurchasePlanController::class, 'index'])->name('admin.purchasePlans'); 
-                Route::get('/admin/tenant/{tenantId}/subscription', [AdminPurchasePlanController::class, 'getTenantSubscription'])->name('admin.getTenantSubscription');
-                Route::post('/admin/subscribe', [AdminPurchasePlanController::class, 'subscribe'])->name('admin.subscribe');
-                Route::put('/admin/tenant/{tenantId}/subscription/{plan}', [AdminPurchasePlanController::class, 'changeSubscription'])->name('admin.changeSubscription');
-                Route::delete('/admin/tenant/{tenantIds}/subscription', [AdminPurchasePlanController::class, 'cancelSubscription'])->name('admin.cancelSubscription');
+
+                Route::get('/admin/purchase-plans', [AdminPlanController::class, 'index'])->name('admin.plans');
+                Route::post('/admin/store-purchase-plans', [AdminPlanController::class, 'store'])->name('admin.plans.store');
+                Route::put('/admin/update-purchase-plans/{plan}', [AdminPlanController::class, 'update'])->name('admin.plans.update');
+                Route::delete('/admin/delete-purchase-plans/{plan}', [AdminPlanController::class, 'destroy'])->name('admin.plans.destroy');
+
+
+
+
+
+                // Route::get('/admin/tenant/{tenantId}/subscription', [AdminSubscriptionController::class, 'getTenantSubscription'])->name('admin.getTenantSubscription');
+                Route::post('/admin/subscripe', [AdminSubscriptionController::class, 'subscripe'])->name('admin.subscripe');
+                Route::put('/admin/tenant/{tenantId}/subscription/{plan}', [AdminSubscriptionController::class, 'changeSubscription'])->name('admin.changeSubscription');
+                Route::delete('/admin/tenant/{tenantIds}/subscription', [AdminSubscriptionController::class, 'cancelSubscription'])->name('admin.cancelSubscription');
+
+
+
+
+
+
+
+
+
 
             });
         });
@@ -61,14 +103,25 @@ foreach (config('tenancy.central_domains') as $domain) {
 }
 
 // remains    
-// what is page.props in usesubscription
-// AdmincontrolPlans   complete it to let admin control plans data and offers
+// complete tenant.renew_subscription view and proccess
+// check tenantPaymentMethod  how to work with it and how to add it in the tenant side
+// complete paymentService->chargePaymentMethod logic
+// in planService in subscripeTenant method we need to add the tenantPaymentMethod to the subscription
+// check config.quoe
+// check app => console jobs events listeners mail
+// check if the reminder mail link works
+// search for url('    and fix routes
+// merge subscriptionController and RenewalDashboardController   ... they do the same job and make dashboard page for the user
 
-// subscription card and usersupscription.js not used yet
+
+// composable.js , middleware , offers , design  
+ // details:
+// use useSubscription.js composable on admin side
+// prevent user from going to view subscription if he has no one and prevent from call cancel if he has no subscription 
+// AdmincontrolPlans   add old price and new price as an offer
+// modify design on tenant side
 
 
-// fetchPlans  fetchTenants  subscribeToPlan  cancelSubscription  changeSubscription
-// check fetchTenantSubscription on admin side
 
 
 
@@ -100,17 +153,55 @@ foreach (config('tenancy.central_domains') as $domain) {
 // CheckTenantUserMiddleware added to the tenant.php
 //  required components  from shadcn  : table , button , dropdown-menu , select
 // add tenant request.php
-    // update valueUpdater.vue component
-    // in appServiceProvider add         JsonResource::withoutWrapping(); // this is to remove word data when calling data from any resource like usersResource collection
-    // install Alert Dialog from chadcn and add it in all tenants to approve cancel all
-    // update '@/lib/utils' tobe like in this project
+// update valueUpdater.vue component
+// in appServiceProvider add         JsonResource::withoutWrapping(); // this is to remove word data when calling data from any resource like usersResource collection
+// install Alert Dialog from chadcn and add it in all tenants to approve cancel all
+// update '@/lib/utils' tobe like in this project
 // create vue component DataTableDropDown.vue
 // create tenant dashboard controller to let the tenant to handle his own supscription and modify it if he wants 
 // add pagination component in all tenants .vue 
-
-
+// add card component from shadcn vue
+// create container component 
+// create RenewalDashboardController 
+// create payment service 
+// create payment result service
+// create TenantPaymentMethod and migration
 // when creating a user for any tenant we have to add this line    after creating user $user = User::create(.....)
-            // $user->tenants()->attach(tenant('id')); /// very important line to attatch users with there tenants and we control access to only this tenant  from CheckTenantUserMiddleware 
+// $user->tenants()->attach(tenant('id')); /// very important line to attatch users with there tenants and we control access to only this tenant  from CheckTenantUserMiddleware 
+
+// create config/subscription.php
+
+//create these files in app/notifications :
+// SubscriptionRenewalSuccess ,PaymentFailureNotification ,SubscriptionRenewalFailure ,PaymentMethodRequired 
+
+
+// add these to .env\:
+// QUEUE_CONNECTION=redis // check 
+// SUBSCRIPTION_GRACE_PERIOD_DAYS=3
+// SUBSCRIPTION_FROM_EMAIL=noreply@yourapp.com
+// PAYMENT_PROVIDER=stripe
+
+// # Subscription specific settings
+// SUBSCRIPTION_GRACE_PERIOD_DAYS=3
+// SUBSCRIPTION_REMINDER_DAYS=7
+// SUBSCRIPTION_MAX_RETRIES=3
+// SUBSCRIPTION_FROM_EMAIL=noreply@yourapp.com
+// SUBSCRIPTION_FROM_NAME="Your App"
+
+
+////////////////////////////////////////////////////////////
+// to make queues works :
+// # Development
+// php artisan queue:work redis --queue=subscriptions
+
+// # Production (use Supervisor)
+// sudo supervisorctl start laravel-subscription-worker:*
+////////////////////////////////////////////////////////////
+
+
+
+
+
 
 // uncoment   Stancl\Tenancy\Features\ViteBundler::class in config/tenancy /// check
 // uncoment   Stancl\Tenancy\Features\UserImpersonation::class, in config/tenancy /// check
@@ -127,7 +218,7 @@ foreach (config('tenancy.central_domains') as $domain) {
 // create dpurchase plane model and migration 
 // create Tenant Subscription  model and migration 
 // update tenant model to handle subscriptions and purchases
-// create PurchasePlanService service 
+// create PlanService service 
 // create purchase plan controller 
 // create CheckSubscription middleware
 // register middleware alias in bootstrap           
@@ -138,18 +229,46 @@ foreach (config('tenancy.central_domains') as $domain) {
 // })
 
 
-// create resource PurchasePlanResource
+// create resource PlanResource
 // create resource TenantSubscriptionResource
-// create PurchasePlanSeeder  and register is
+// create PlanSeeder  and register is
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // make command  app/Console/Commands/CheckExpiredSubscriptions.php
+// make command  app/Console/Commands/ProcessDueRenewals .php for processing renewals
 // make job ProcessSubscriptionRenewal
 // make mail SubscriptionWelcome  and email view
 // add event SubscriptionCreated  check function broadcastOn   channel 
 // add listener  SendSubscriptionWelcomeEmail
 // Register the event listener in app/Providers/EventServiceProvider.php  /// no need in laravel 12
 
+
+
+// check expired tenants/////////////////////////////////////////////
+// to let the job working we need to add this line in bootstrap/app.php
+
+// use Illuminate\Console\Scheduling\Schedule;
+// ->withSchedule(function (Schedule $schedule) {
+// $schedule->command( CheckExpiredSubscriptions::class)->everyMinute(); // or daily
+// })
+
+// or  add this to routes/console.php
+
+// use Illuminate\Support\Facades\Schedule;
+// Schedule::command('subscriptions:check-expired')->everyMinute(); // or daily
+
+
+// on live server we need to add cron job
+/////////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////// for renewal of subscriptions /////////////////////////////////////////////////////////
+// inside controller =>  SubscriptionController.php
+// for manual renewal we need to create a method renewSubscription in SubscriptionController.php
+// and a method bulkRenew for bulk renewals in SubscriptionController.php
+
+
+// for automatic renewal we need to create a command ProcessDueRenewals.php
 
 
 
@@ -168,7 +287,237 @@ foreach (config('tenancy.central_domains') as $domain) {
 // remember when we use resources the data return with '.data'   like subscription.data     we dont use it in other projects becase we handle it
 // remember there is a main_site_admin for the super admin for main site
 // remember to change url in the real site in this file =>  RegisterResponse
-// remember we use  subscriptions.at(-1).purchasePlan.name to get last subscription either active or canceled
+// remember we use  subscriptions.at(-1).plan.name to get last subscription either active or canceled
 // remember to  arange  tenant route for middleware 'check.subscription' 
 
 // remember laravel herd will not work with subdomains because it has to be added manualy in C:\Windows\System32\drivers\etc
+
+
+
+
+
+
+
+
+
+
+
+
+// check the following for payment proccess /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//  1. Environment Setup
+// # Add these to your .env file
+
+// QUEUE_CONNECTION=redis
+// REDIS_HOST=127.0.0.1
+// REDIS_PASSWORD=null
+// REDIS_PORT=6379
+
+// # Subscription specific settings
+// SUBSCRIPTION_GRACE_PERIOD_DAYS=3
+// SUBSCRIPTION_REMINDER_DAYS=7
+// SUBSCRIPTION_MAX_RETRIES=3
+// SUBSCRIPTION_FROM_EMAIL=noreply@yourapp.com
+// SUBSCRIPTION_FROM_NAME="Your App"
+
+// # Payment provider settings
+// PAYMENT_PROVIDER=stripe
+// PAYMENT_WEBHOOK_SECRET=your_webhook_secret_here
+
+// # 2. Database Migrations
+// php artisan make:migration create_tenant_payment_methods_table
+// php artisan make:migration add_notes_to_tenant_subscriptions_table
+
+// # Run migrations
+// php artisan migrate
+
+// # 3. Create notifications
+// php artisan make:notification SubscriptionRenewalSuccess
+// php artisan make:notification PaymentFailureNotification
+// php artisan make:notification SubscriptionRenewalFailure
+// php artisan make:notification PaymentMethodRequired
+
+// # 4. Create the job
+// php artisan make:job ProcessSubscriptionRenewal
+
+// # 5. Create commands
+// php artisan make:command ProcessDueRenewals
+// php artisan make:command CheckExpiredSubscriptions
+// php artisan make:command SendSubscriptionRenewalReminders 
+
+// create mail notification for tenants that will be expired next days => class SubscriptionRenewalReminder extends Mailable
+
+
+// # 6. Queue Setup Commands
+
+// # Start Redis server (if not already running)
+// redis-server
+
+// # Start queue worker for subscriptions
+// php artisan queue:work redis --queue=subscriptions --sleep=3 --tries=3 --max-time=3600
+
+// # Or run specific queue worker in background
+// nohup php artisan queue:work redis --queue=subscriptions --sleep=3 --tries=3 --max-time=3600 > /dev/null 2>&1 &
+
+// # 7. Test Commands
+
+// # Test dry run of renewals
+// php artisan subscriptions:process-renewals --dry-run
+
+// # Actually process renewals
+// php artisan subscriptions:process-renewals
+
+// # Check expired subscriptions
+// php artisan subscriptions:check-expired
+
+// # 8. Supervisor Configuration for Production
+// # Create file: /etc/supervisor/conf.d/laravel-subscription-worker.conf
+
+// [program:laravel-subscription-worker]
+// process_name=%(program_name)s_%(process_num)02d
+// command=php /path/to/your/app/artisan queue:work redis --queue=subscriptions --sleep=3 --tries=3 --max-time=3600
+// directory=/path/to/your/app
+// autostart=true
+// autorestart=true
+// user=www-data
+// numprocs=2
+// redirect_stderr=true
+// stdout_logfile=/path/to/your/app/storage/logs/worker.log
+// stopwaitsecs=3600
+
+// # 9. Supervisor commands
+// sudo supervisorctl reread
+// sudo supervisorctl update
+// sudo supervisorctl start laravel-subscription-worker:*
+
+// # 10. Monitoring Commands
+
+// # Check queue status
+// php artisan queue:monitor redis:subscriptions --max=100
+
+// # Clear failed jobs
+// php artisan queue:flush
+
+// # Retry failed jobs
+// php artisan queue:retry all
+
+// # Check queue size
+// php artisan tinker
+// Queue::size('subscriptions')
+
+// # 11. Testing in Tinker
+// php artisan tinker
+
+// # Create test data
+// $tenant = App\Models\Tenant::first();
+// $plan = App\Models\Plan::first();
+
+// # Create payment method
+// $paymentMethod = App\Models\TenantPaymentMethod::create([
+//     'tenant_id' => $tenant->id,
+//     'type' => 'card',
+//     'provider' => 'stripe',
+//     'provider_id' => 'pm_test_123',
+//     'last_four' => '4242',
+//     'brand' => 'visa',
+//     'expires_at' => now()->addYear(),
+//     'is_default' => true,
+//     'is_active' => true
+// ]);
+
+// # Create subscription
+// $subscription = App\Models\TenantSubscription::create([
+//     'tenant_id' => $tenant->id,
+//     'purchase_plan_id' => $plan->id,
+//     'status' => 'active',
+//     'ends_at' => now()->addDay() // Expires tomorrow
+// ]);
+
+// # Test renewal job
+// App\Jobs\ProcessSubscriptionRenewal::dispatch($subscription->id);
+
+// # Check job was queued
+// Queue::size('subscriptions')
+
+// # 12. Cron Job Setup
+// # Add to crontab (crontab -e)
+// * * * * * cd /path/to/your/app && php artisan schedule:run >> /dev/null 2>&1
+
+// # 13. Log Monitoring
+// tail -f storage/logs/laravel.log | grep "subscription"
+// tail -f storage/logs/worker.log
+
+// # 14. Performance Testing Script
+// php artisan tinker
+
+// # Create multiple test subscriptions
+// $tenant = App\Models\Tenant::first();
+// $plan = App\Models\Plan::first();
+
+// for ($i = 0; $i < 100; $i++) {
+//     $subscription = App\Models\TenantSubscription::create([
+//         'tenant_id' => $tenant->id,
+//         'purchase_plan_id' => $plan->id,
+//         'status' => 'active',
+//         'ends_at' => now()->addDays(rand(1, 3))
+//     ]);
+    
+//     // Queue renewal with staggered delays
+//     App\Jobs\ProcessSubscriptionRenewal::dispatch($subscription->id)
+//         ->delay(now()->addSeconds($i * 2));
+// }
+
+// # Check queue size
+// Queue::size('subscriptions')
+
+// # 15. Health Check Script
+// # Create file: scripts/check-subscription-health.sh
+
+// #!/bin/bash
+
+// QUEUE_SIZE=$(php artisan tinker --execute="echo Queue::size('subscriptions');")
+// FAILED_JOBS=$(php artisan tinker --execute="echo DB::table('failed_jobs')->count();")
+
+// echo "Subscription queue size: $QUEUE_SIZE"
+// echo "Failed jobs count: $FAILED_JOBS"
+
+// if [ "$QUEUE_SIZE" -gt 1000 ]; then
+//     echo "WARNING: Queue size is high"
+// fi
+
+// if [ "$FAILED_JOBS" -gt 10 ]; then
+//     echo "WARNING: Too many failed jobs"
+// fi
+
+// # 16. Debugging Commands
+
+// # View failed jobs
+// php artisan queue:failed
+
+// # Get details of a specific failed job
+// php artisan queue:failed --id=1
+
+// # Retry specific failed job
+// php artisan queue:retry 1
+
+// # Clear all failed jobs
+// php artisan queue:flush
+
+// # 17. Load Testing with Artillery (optional)
+// # Install artillery: npm install -g artillery
+// # Create artillery-test.yml:
+
+// config:
+//   target: 'http://your-app.com'
+//   phases:
+//     - duration: 60
+//       arrivalRate: 10
+// scenarios:
+//   - name: "Trigger renewals"
+//     requests:
+//       - post:
+//           url: "/api/subscriptions/{{ $randomInt(1, 100) }}/renew"
+//           headers:
+//             Authorization: "Bearer your-token"
+
+// # Run load test
+// artillery run artillery-

@@ -1,69 +1,221 @@
 <script setup>
-import { ref, computed , watch} from "vue";
-import { router, useForm, usePage } from "@inertiajs/vue3";
+import AppLayout from "@/layouts/AppLayout.vue";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import useDialogModal from "@/composables/useDialogModal.js";
+
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+import { router, useForm, usePage, Head } from "@inertiajs/vue3";
+import ActionMessage from "@/components/ActionMessage.vue";
+import ActionSection from "@/components/ActionSection.vue";
+import DialogModal from "@/components/old/DialogModal.vue";
+import PrimaryButton from "@/components/old/PrimaryButton.vue";
+import SecondaryButton from "@/components/old/SecondaryButton.vue";
+import TextInput from "@/components/old/TextInput.vue";
+
+import InputError from "@/components/InputError.vue";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ref, toRef } from "vue";
+import { watch } from "vue";
+import useDeleteItem from "@/composables/useDeleteItem";
+import Container from "@/components/Container.vue";
 
 const props = defineProps({
     plans: {
         type: Array,
         default: () => [],
     },
-    type: {
-        type: String,
-        default: () => null,
+    popularPlan: {
+        type: Object,
+        required: {},
     },
-    
+    routeResourceName: {
+        type: String,
+        required: "",
+    },
+
     errors: {
         type: Object,
         default: () => {},
     },
-
 });
 
-const page = usePage();
+const opened = ref(0);
+const method = ref("");
+const showScreenExeptSubmenu = ref(false);
+const routeResourceName = ref(props.routeResourceName);
+const editMode = ref(false);
+// const isDialogOpen = ref(false);
 
-// Reactive state
-const showModal = ref(false);
-const selectedPlan = ref(null);
-const modalError = ref("");
+const form = useForm({
+    name: "",
+    description: "",
+    price: "",
+    currency: "",
+    interval: "",
+    trial_days: "",
+    features: [],
+});
 
-// // Form for subscription
-// const form = useForm({
-//     tenant_id: "",
-// });
-
-const processing = ref(false)
-
-// Computed properties
-const toast = computed(() => {
-    const flash = page.props.flash;
-    if (flash?.success) {
-        return {
-            show: true,
-            type: "success",
-            message: flash.success,
-        };
-    } else if (flash?.error) {
-        return {
-            show: true,
-            type: "error",
-            message: flash.error,
-        };
+const addNewFeature = () => {
+    if (form.features.length > 0) {
+        let emptyInput = form.features.find((item) => item == "");
+        emptyInput != "" ? form.features.push("") : "";
+    } else {
+        form.features.push("");
     }
-    return {
-        show: false,
-        type: "success",
-        message: "",
-    };
+};
+
+const removeFeature = (index) => {
+    form.features.splice(index, 1);
+};
+
+const {
+    closeDialogModal,
+    dialogModal,
+    itemToSave,
+    isSaving,
+    showDialogModal,
+    showEditModal,
+    handleSavingItem,
+} = useDialogModal({
+    routeResourceName: routeResourceName,
+    form: form,
+    opened,
+    showScreenExeptSubmenu,
+    method,
+    editMode,
 });
 
-// watch(()=> usePage().props.flash.error, 
-// ()=> usePage().props.flash.error != '' ? processing.value = false : '')
-// watch(()=> usePage().props.flash.error, 
-// ()=> usePage().props.flash.error != '' ? showModal.value = false : '')
+const {
+    close,
+    deleteModal,
+    itemToDelete,
+    isDeleting,
+    showDeleteModal,
+    handleDeleteItem,
+    deleteMultipleItems,
+} = useDeleteItem({
+    routeResourceName: props.routeResourceName,
+});
 
-// Methods
+const fillForm = (item) => {
+    Object.keys(form).forEach((key) =>
+        item[key] !== undefined ? (form[key] = item[key]) : ""
+    );
+
+    form.features = [];
+
+    item.features.forEach((i) => form.features.push(formatFeature(i)));
+};
+
+const emptyErrors = () => {
+    Object.keys(props.errors).forEach((error) => (props.errors[error] = ""));
+};
+
+// const fireshowDialogModal = () => {
+//     editMode.value = false;
+//     emptyErrors();
+//     showDialogModal();
+// };
+
+const fireShowEditModal = (item) => {
+    console.log("fireShowEditModal", item);
+    form.reset();
+    editMode.value = true;
+    method.value = "update";
+    emptyErrors();
+    fillForm(item);
+    showEditModal(item);
+};
+
+const addNewOrEdit = () => {
+    return editMode.value == true ? editPlan() : addNewPlan();
+};
+
+const editPlan = () => {
+    editMode.value == true;
+    method.value = "update";
+    routeResourceName.value = `${props.routeResourceName}`;
+    return handleSavingItem();
+};
+
+const addNewPlan = () => {
+    // console.log(props.routeResourceName)
+    editMode.value == false;
+    method.value = "store";
+    routeResourceName.value = `${props.routeResourceName}`;
+    return handleSavingItem();
+};
+
+// const submit = () => {
+//     if (props.action == "edit") {
+//         editPlan();
+//     } else {
+//         addNewPlan();
+//     }
+// };
+
+// watch(
+//     () => props.isDialogOpen,
+//     () => (props.action == "edit" ? fillForm(props.item) : "")
+// );
+
+// watch(
+//     () => props.isDialogOpen,
+//     () => (props.isDialogOpen == false ? form.reset() : "")
+// );
+
+// watch(
+//     () => props.isDialogOpen,
+//     () => (isDialogOpen.value = props.isDialogOpen)
+// );
+
+watch(
+    () => dialogModal.value,
+    () => (dialogModal.value == false ? closeModal() : "")
+);
+
+// const emit = defineEmits(["close"]);
+
+const closeModal = () => {
+    editMode.value = false;
+    form.reset();
+};
+
 const formatPrice = (price) => {
-    return parseFloat(price).toFixed(2);
+    return parseFloat(price).toFixed(2) * 1;
 };
 
 const formatFeature = (feature) => {
@@ -73,409 +225,379 @@ const formatFeature = (feature) => {
         .join(" ");
 };
 
-const openSubscriptionModal = (plan) => {
-    selectedPlan.value = plan;
-    // form.tenant_id = "";
-    // form.clearErrors();
-    modalError.value = "";
-    showModal.value = true;
-};
-
-const closeModal = () => {
-    if (processing.value == true ) return;
-
-    showModal.value = false;
-    selectedPlan.value = null;
-    // form.reset();
-    // form.clearErrors();
-    modalError.value = "";
-};
-
-
-
-const confirmSubscription = () => {
-
-props.type == null ? confirm() : change()
-
-};
-const confirm =()=> {
-    if (!selectedPlan.value) {
-        modalError.value = "No plan selected";
-        return;
-    }
-    // if (!form.tenant_id) {
-    //     modalError.value = "Please select a tenant";
-    //     return;
-    // }
-
-    modalError.value = "";
-
-    processing.value = true
-
-    router.post(route(`tenant.subscribe` , selectedPlan.value.id),{}, {
-        preserveState: true,
-        preserveScroll: true,
-        onSuccess: () => {
-                processing.value = false
-
-            closeModal();
-            // Optional: redirect to tenant dashboard
-            // You can handle this in your backend controller instead
-        },
-        onError: (errors) => {
-            console.log(errors)
-            // if (errors.tenant_id) {
-            //     modalError.value = errors.tenant_id;
-            // } else
-             if (errors) {
-                modalError.value = errors.error;
-            } else {
-                modalError.value = "An error occurred while subscribing";
-            }
-        },
-    });
-}
-
-const change = ()=>{
-     if (!selectedPlan.value) {
-        modalError.value = "No plan selected";
-        return;
-    }
-
-    modalError.value = "";
-
-    processing.value = true
-
-    router.put(route(`tenant.changeSubscription` , selectedPlan.value.id),{}, {
-        preserveState: true,
-        preserveScroll: true,
-        onSuccess: () => {
-                processing.value = false
-
-            closeModal();
-            // Optional: redirect to tenant dashboard
-            // You can handle this in your backend controller instead
-        },
-        onError: (errors) => {
-            console.log(errors)
-            // if (errors.tenant_id) {
-            //     modalError.value = errors.tenant_id;
-            // } else
-             if (errors) {
-                modalError.value = errors.error;
-            } else {
-                modalError.value = "An error occurred while subscribing";
-            }
-        },
-    });
-}
-
-// Keyboard event listeners
-const handleEscape = (e) => {
-    if (e.key === "Escape" && showModal.value) {
-        closeModal();
-    }
-};
-
-// Add event listener when component mounts
-document.addEventListener("keydown", handleEscape);
-
-// Cleanup when component unmounts
-import { onUnmounted } from "vue";
-onUnmounted(() => {
-    document.removeEventListener("keydown", handleEscape);
-});
+const breadcrumbs = [
+    {
+        title: "Dashboard",
+        href: "/dashboard",
+    },
+];
 </script>
 
 <template>
+    <Head title="Dashboard" />
 
-    <div class="container mx-auto px-4 py-8">
-        <!-- Header Section -->
-        <div class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-gray-900 mb-4">
-                Choose Your Plan
-            </h1>
-            <p class="text-xl text-gray-600">
-                Select the perfect plan for your business needs
-            </p>
-        </div>
-
-        <!-- Plans Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div
-                v-for="(plan, index) in plans"
-                :key="plan.id"
-                class="bg-white rounded-lg shadow-lg overflow-hidden transition-transform hover:scale-105"
-                :class="{ 'ring-2 ring-blue-500 relative': index === 1 }"
-            >
-                <!-- Popular Badge -->
-                <div
-                    v-if="index === 1"
-                    class="absolute top-0 left-1/2 transform -translate-x-1/2 mt-1"
-                >
-                    <span
-                        class="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium"
-                    >
-                        Most Popular
-                    </span>
-                </div>
-
-                <div class="px-6 py-8">
-                    <!-- Plan Header -->
-                    <div class="text-center mb-8">
-                        <h3 class="text-2xl font-bold text-gray-900 mb-2">
-                            {{ plan.name }}
-                        </h3>
-                        <p class="text-gray-600 mb-4">{{ plan.description }}</p>
-
-                        <div class="mb-4">
-                            <span class="text-4xl font-bold text-gray-900">
-                                ${{ formatPrice(plan.price) }}
-                            </span>
-                            <span class="text-gray-600"
-                                >/ {{ plan.interval }}</span
+    <AppLayout :breadcrumbs="breadcrumbs">
+        <Container>
+            <div class="flex flex-col gap-4">
+                <div>
+                    <Dialog v-model:open="dialogModal">
+                        <DialogTrigger>
+                            <Button
+                                class="hover:cursor-pointer"
+                                @click="form.reset()"
                             >
-                        </div>
-
-                        <!-- Trial Badge -->
-                        <div
-                            v-if="plan.trial_days > 0"
-                            class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm inline-block mb-4"
-                        >
-                            {{ plan.trial_days }} days free trial
-                        </div>
-                    </div>
-
-                    <!-- Features List -->
-                    <ul class="space-y-3 mb-8">
-                        <li
-                            v-for="feature in plan.features"
-                            :key="feature"
-                            class="flex items-center"
-                        >
-                            <svg
-                                class="w-5 h-5 text-green-500 mr-3"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                                add new plan</Button
                             >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M5 13l4 4L19 7"
-                                ></path>
-                            </svg>
-                            <span class="text-gray-700">{{
-                                formatFeature(feature)
-                            }}</span>
-                        </li>
-                    </ul>
+                        </DialogTrigger>
+                        <DialogContent class="sm:max-w-[800px]">
+                            <form @submit.prevent="submit">
+                                <DialogHeader class="space-y-3">
+                                    <DialogTitle> add new plan</DialogTitle>
+                                </DialogHeader>
+                                <DialogDescription>
+                                    plan details.
+                                </DialogDescription>
+                                <div class="grid grid-cols-2 gap-5">
+                                    <div>
+                                        <div class="grid gap-2 mt-4">
+                                            <Label for="name"> name </Label>
+                                            <Input
+                                                id="name"
+                                                v-model="form.name"
+                                                type="text"
+                                                class="mt-1 block w-full"
+                                                autofocus
+                                                autocomplete="name"
+                                            />
+                                            <InputError
+                                                class="mt-2"
+                                                :message="props.errors?.name"
+                                            />
+                                        </div>
+                                        <div class="grid gap-2 mt-4">
+                                            <Label for="name">
+                                                description
+                                            </Label>
+                                            <Input
+                                                id="description"
+                                                v-model="form.description"
+                                                type="text"
+                                                class="mt-1 block w-full"
+                                                autofocus
+                                                autocomplete="description"
+                                            />
+                                            <InputError
+                                                class="mt-2"
+                                                :message="
+                                                    props.errors?.description
+                                                "
+                                            />
+                                        </div>
+                                        <div class="grid gap-2 mt-4">
+                                            <Label for="name"> price </Label>
+                                            <Input
+                                                id="price"
+                                                v-model="form.price"
+                                                type="number"
+                                                step="0.01"
+                                                class="mt-1 block w-full"
+                                                autofocus
+                                                autocomplete="price"
+                                            />
+                                            <InputError
+                                                class="mt-2"
+                                                :message="props.errors?.price"
+                                            />
+                                        </div>
+                                        <div class="grid gap-2 mt-4">
+                                            <Label for="name"> currency </Label>
+                                            <Input
+                                                id="currency"
+                                                v-model="form.currency"
+                                                class="mt-1 block w-full"
+                                                autofocus
+                                                autocomplete="currency"
+                                            />
+                                            <InputError
+                                                class="mt-2"
+                                                :message="
+                                                    props.errors?.currency
+                                                "
+                                            />
+                                        </div>
+                                        <div class="grid gap-2 mt-4">
+                                            <Label for="name"> interval </Label>
+                                            <Input
+                                                id="interval"
+                                                v-model="form.interval"
+                                                type="text"
+                                                class="mt-1 block w-full"
+                                                autofocus
+                                                autocomplete="interval"
+                                            />
+                                            <InputError
+                                                class="mt-2"
+                                                :message="
+                                                    props.errors?.interval
+                                                "
+                                            />
+                                        </div>
+                                        <div class="grid gap-2 mt-4">
+                                            <Label for="name">
+                                                trial days
+                                            </Label>
+                                            <Input
+                                                id="trial_days"
+                                                v-model="form.trial_days"
+                                                type="number"
+                                                step="0.01"
+                                                class="mt-1 block w-full"
+                                                autofocus
+                                                autocomplete="trial_days"
+                                            />
+                                            <InputError
+                                                class="mt-2"
+                                                :message="
+                                                    props.errors?.trial_days
+                                                "
+                                            />
+                                        </div>
+                                    </div>
+                                    <div class="border rounded p-2">
+                                        <DialogDescription>
+                                            features
+                                        </DialogDescription>
 
-                    <!-- Subscribe Button -->
-                    <button
-                        @click="openSubscriptionModal(plan)"
-                        :disabled="processing"
-                        class="w-full font-bold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        :class="
-                            index === 1
-                                ? 'bg-blue-700 hover:bg-blue-800 text-white'
-                                : 'bg-blue-600 hover:bg-blue-700 text-white'
-                        "
-                    >
-                        <span
-                            v-if="processing && selectedPlan?.id === plan.id"
-                        >
-                            <svg
-                                class="inline w-4 h-4 mr-2 animate-spin"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                            >
-                                <circle
-                                    class="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    stroke-width="4"
-                                ></circle>
-                                <path
-                                    class="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                ></path>
-                            </svg>
-                            Processing...
-                        </span>
-                        <span v-else>Get Started</span>
-                    </button>
-                </div>
-            </div>
-        </div>
+                                        <div
+                                            class="flex justify-center items-center"
+                                        >
+                                            <ul class="  ">
+                                                <li
+                                                    v-for="(
+                                                        feature, index2
+                                                    ) in form.features"
+                                                    :key="index2"
+                                                    class="flex justify-center items-center mt-3 gap-3"
+                                                >
+                                                    <div
+                                                        class="flex w-full align-middle items-center gap-4"
+                                                    >
+                                                        <div>
+                                                            {{ index2 + 1 }}
+                                                        </div>
 
-        <!-- Tenant Selection Modal -->
-        <Teleport to="body">
-            <div
-                v-if="showModal"
-                class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
-                @click="closeModal"
-            >
-                <div
-                    class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white"
-                    @click.stop
-                >
-                    <div class="mt-3 text-center">
-                       
-                        
+                                                        <Input
+                                                            id="name"
+                                                            v-model="
+                                                                form.features[
+                                                                    index2
+                                                                ]
+                                                            "
+                                                            type="text"
+                                                            class="mt-1 block w-full"
+                                                            autofocus
+                                                            autocomplete="name"
+                                                        />
 
-                        <!-- Error Message -->
-                        <div
-                            v-if="modalError "
-                            class="mt-2 text-red-600 text-sm"
-                        >
-                            {{ modalError }}
-                        </div>
+                                                        <!-- <Button small color="gradient_white">
+                                                             {{ formatFeature(feature) }}
+                                                         </Button> -->
+                                                    </div>
 
-                        <div class="items-center px-4 py-3">
-                            <button
-                                @click="confirmSubscription"
-                                :disabled=" processing"
-                                class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <span v-if="processing">
-                                    <svg
-                                        class="inline w-4 h-4 mr-2 animate-spin"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
+                                                    <!-- <InputGroup
+                                 nolabel
+                                 class="px-8 col-span-6 w-full"
+                                 v-model="form.features[index2]"
+                                 :message="props.errors?.features"
+                             /> -->
+
+                                                    <div>
+                                                        <Button
+                                                            @click="
+                                                                removeFeature(
+                                                                    index2
+                                                                )
+                                                            "
+                                                            medium
+                                                            color="gradient_red"
+                                                            class="mt- hover:cursor-pointer mx-1 px-4 hover:scale-110 curser-pointer"
+                                                        >
+                                                            {{ "-" }}
+                                                        </Button>
+                                                    </div>
+
+                                                    <InputError
+                                                        class="mt-2"
+                                                        :message="
+                                                            props.errors[
+                                                                'features.' +
+                                                                    index2
+                                                            ]
+                                                        "
+                                                    />
+                                                </li>
+                                                <div
+                                                    class="mt-3 flex justify-center"
+                                                >
+                                                    <Button
+                                                        @click="addNewFeature"
+                                                        medium
+                                                        color="gradient_blue"
+                                                        class="hover:cursor-pointer mx-1 px-4 hover:scale-110 curser-pointer"
+                                                    >
+                                                        {{ "+" }}
+                                                    </Button>
+                                                </div>
+                                            </ul>
+                                            <InputError
+                                                class="mt-2"
+                                                :message="
+                                                    props.errors?.features
+                                                "
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <DialogFooter class="gap-2 mt-8">
+                                    <DialogClose as-child>
+                                        <Button
+                                            variant="secondary"
+                                            @click="dialogModal = false"
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </DialogClose>
+
+                                    <Button
+                                        @click="addNewOrEdit"
+                                        class="hover:cursor-pointer"
+                                        type="submit"
+                                        :disabled="form.processing"
                                     >
-                                        <circle
-                                            class="opacity-25"
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            stroke-width="4"
-                                        ></circle>
-                                        <path
-                                            class="opacity-75"
-                                            fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                        ></path>
-                                    </svg>
-                                    Processing...
-                                </span>
-                                <span v-else>Confirm Subscription</span>
-                            </button>
-                            <button
-                                @click="closeModal"
-                                :disabled="processing"
-                                class="mt-2 px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:opacity-50"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
+                                        confirm
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 </div>
-            </div>
-        </Teleport>
 
-        <!-- Success/Error Toast -->
-        <Teleport to="body">
-            <div
-                v-if="toast.show"
-                class="fixed top-4 right-4 z-50 max-w-sm w-full"
-                :class="
-                    toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-                "
-            >
-                <div class="rounded-lg shadow-lg p-4 text-white">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <svg
-                                v-if="toast.type === 'success'"
-                                class="h-5 w-5"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
+                <div
+                    class="grid gap-5 content-center lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+                >
+                    <Card
+                        :class="cn(' h-full max-w-auto', $attrs.class ?? '')"
+                        v-for="(plan, index) in plans"
+                        :key="plan.id"
+                    >
+                        <CardHeader>
+                            <CardTitle class="relative">
+                                <div
+                                    class="absolute -top-6 left-1/2 transform -translate-x-1/2 mt-1"
+                                    v-if="plan.id == popularPlan?.id"
+                                >
+                                    <span
+                                        class="bg-gradient-to-r from-orange-500  to-red-500 text-white px-3 py-0.5 rounded-full text-sm font-medium"
+                                    >
+                                        Most Popular
+                                    </span>
+                                </div>
+                                {{ plan.name }}
+                            </CardTitle>
+                            <CardDescription>
+                                {{ plan.description }}</CardDescription
                             >
-                                <path
-                                    fill-rule="evenodd"
-                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                    clip-rule="evenodd"
-                                />
-                            </svg>
-                            <svg
-                                v-else
-                                class="h-5 w-5"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                            >
-                                <path
-                                    fill-rule="evenodd"
-                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                    clip-rule="evenodd"
-                                />
-                            </svg>
+                        </CardHeader>
+                        <div class="flex flex-col h-full gap-5 justify-between">
+                            <CardContent class="grid gap-4">
+                                <div class="mb-4">
+                                    <span class="text-4xl font-bold">
+                                        ${{ formatPrice(plan.price) }}
+                                    </span>
+                                    <span class="text-gray-600"
+                                        >/ {{ plan.interval }}</span
+                                    >
+                                </div>
+
+                                <!-- Trial Badge -->
+                                <div
+                                    v-if="plan.trial_days > 0"
+                                    class="bg-green-100/10 dark:text-green-600 text-green-800 px-3 py-1 rounded-full text-sm inline-block mb-4"
+                                >
+                                    {{ plan.trial_days }} days free trial
+                                </div>
+
+                                <div>
+                                    <div
+                                        v-for="feature in plan.features"
+                                        :key="feature"
+                                        class="mb-4 grid grid-cols-[25px_minmax(0,1fr)] items-start pb-4 last:mb-0 last:pb-0"
+                                    >
+                                        <span
+                                            class="flex h-2 w-2 translate-y-1 rounded-full bg-sky-500"
+                                        />
+                                        <div class="space-y-1">
+                                            <p
+                                                class="text-sm font-medium leading-none"
+                                            >
+                                                {{ formatFeature(feature) }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                            <CardFooter>
+                                <div class="flex flex-col gap-2 w-full">
+                                    <Button
+                                        @click="fireShowEditModal(plan)"
+                                        class="w-full hover:cursor-pointer"
+                                    >
+                                        edit
+                                    </Button>
+                                    <Button
+                                        variant="destructiveTransparent"
+                                        @click="showDeleteModal(plan)"
+                                        class="w-full hover:cursor-pointer"
+                                    >
+                                        delete
+                                    </Button>
+                                </div>
+                            </CardFooter>
                         </div>
-                        <div class="ml-3">
-                            <p class="text-sm font-medium">
-                                {{ toast.message }}
-                            </p>
-                        </div>
-                    </div>
+                    </Card>
                 </div>
             </div>
-        </Teleport>
-    </div>
+        </Container>
+
+        <AlertDialog v-model:open="deleteModal">
+            <!-- <AlertDialogTrigger as-child v-show="showAlertModal">
+                <Button variant="destructive"> cancel all selected </Button>
+            </AlertDialogTrigger> -->
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>
+                        Are you absolutely sure?
+                        <br />
+                        delete plan : {{ itemToDelete[0].name }}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently
+                        delete your account and remove your data from our
+                        servers.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                        @click="handleDeleteItem"
+                        :disabled="isDeleting"
+                    >
+                        <span v-if="isDeleting">deleting</span>
+                        <span v-else> delete </span>
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    </AppLayout>
 </template>
-
-<style scoped>
-.container {
-    max-width: 1200px;
-}
-
-/* Custom scrollbar for modal */
-.overflow-y-auto::-webkit-scrollbar {
-    width: 6px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-track {
-    background: #f1f1f1;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 3px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
-}
-
-/* Smooth transitions */
-.transition-transform {
-    transition: transform 0.2s ease-in-out;
-}
-
-/* Loading animation */
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.animate-spin {
-    animation: spin 1s linear infinite;
-}
-
-/* Focus states */
-select:focus,
-button:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
-}
-
-/* Hover effects */
-.hover\:scale-105:hover {
-    transform: scale(1.05);
-}
-</style>

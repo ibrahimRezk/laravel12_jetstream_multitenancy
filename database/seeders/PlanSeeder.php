@@ -2,18 +2,18 @@
 
 namespace Database\Seeders;
 
-use App\Models\PurchasePlan;
+use App\Models\Plan;
 use Illuminate\Database\Seeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
-class PurchasePlanSeeder extends Seeder
+class PlanSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-         PurchasePlan::create([
+         Plan::create([
             'name' => 'Basic',
             'description' => 'Perfect for small businesses',
             'price' => 19.99,
@@ -24,7 +24,7 @@ class PurchasePlanSeeder extends Seeder
             'sort_order' => 1
         ]);
 
-        PurchasePlan::create([
+        Plan::create([
             'name' => 'Pro',
             'description' => 'Great for growing businesses',
             'price' => 49.99,
@@ -35,7 +35,7 @@ class PurchasePlanSeeder extends Seeder
             'sort_order' => 2
         ]);
 
-        PurchasePlan::create([
+        Plan::create([
             'name' => 'Enterprise',
             'description' => 'For large organizations',
             'price' => 99.99,

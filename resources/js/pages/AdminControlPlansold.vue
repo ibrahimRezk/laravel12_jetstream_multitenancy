@@ -1,17 +1,23 @@
 <script setup>
-import { ref, computed } from "vue";
-import { useForm, usePage } from "@inertiajs/vue3";
+import { ref, computed, watch } from "vue";
+import { router, useForm, usePage } from "@inertiajs/vue3";
+import AddEditPlan from "./AddEditPlan.vue";
 
 const props = defineProps({
     plans: {
         type: Array,
         default: () => [],
     },
-    tenants: {
-        type: Array,
-        default: () => [],
+    type: {
+        type: String,
+        default: () => null,
     },
-});
+
+    errors: {
+        type: Object,
+        default: () => {},
+    },
+}); 
 
 const page = usePage();
 
@@ -20,10 +26,12 @@ const showModal = ref(false);
 const selectedPlan = ref(null);
 const modalError = ref("");
 
-// Form for subscription
-const form = useForm({
-    tenant_id: "",
-});
+// // Form for subscription
+// const form = useForm({
+//     tenant_id: "",
+// });
+
+const processing = ref(false);
 
 // Computed properties
 const toast = computed(() => {
@@ -48,6 +56,11 @@ const toast = computed(() => {
     };
 });
 
+// watch(()=> usePage().props.flash.error,
+// ()=> usePage().props.flash.error != '' ? processing.value = false : '')
+// watch(()=> usePage().props.flash.error,
+// ()=> usePage().props.flash.error != '' ? showModal.value = false : '')
+
 // Methods
 const formatPrice = (price) => {
     return parseFloat(price).toFixed(2);
@@ -60,30 +73,71 @@ const formatFeature = (feature) => {
         .join(" ");
 };
 
-const openSubscriptionModal = (plan) => {
+const openEditSubscriptionModal = (plan) => {
+    // const openSubscriptionModal = (plan) => {
     selectedPlan.value = plan;
-    form.tenant_id = "";
-    form.clearErrors();
+    // form.tenant_id = "";
+    // form.clearErrors();
     modalError.value = "";
     showModal.value = true;
 };
 
 const closeModal = () => {
-    if (form.processing) return;
+    if (processing.value == true) return;
 
     showModal.value = false;
     selectedPlan.value = null;
-    form.reset();
-    form.clearErrors();
+    // form.reset();
+    // form.clearErrors();
     modalError.value = "";
 };
 
 const confirmSubscription = () => {
-    if (!form.tenant_id) {
-        modalError.value = "Please select a tenant";
+    props.type == null ? confirm() : change();
+};
+const confirm = () => {
+    if (!selectedPlan.value) {
+        modalError.value = "No plan selected";
         return;
     }
+    // if (!form.tenant_id) {
+    //     modalError.value = "Please select a tenant";
+    //     return;
+    // }
 
+    modalError.value = "";
+
+    processing.value = true;
+
+    router.post(
+        route(`tenant.subscripe`, selectedPlan.value.id),
+        {},
+        {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                processing.value = false;
+
+                closeModal();
+                // Optional: redirect to tenant dashboard
+                // You can handle this in your backend controller instead
+            },
+            onError: (errors) => {
+                console.log(errors);
+                // if (errors.tenant_id) {
+                //     modalError.value = errors.tenant_id;
+                // } else
+                if (errors) {
+                    modalError.value = errors.error;
+                } else {
+                    modalError.value = "An error occurred while subscriping";
+                }
+            },
+        }
+    );
+};
+
+const change = () => {
     if (!selectedPlan.value) {
         modalError.value = "No plan selected";
         return;
@@ -91,24 +145,34 @@ const confirmSubscription = () => {
 
     modalError.value = "";
 
-    form.post(`/subscribe/${selectedPlan.value.id}`, { 
-        preserveState: true,
-        preserveScroll: true,
-        onSuccess: () => {
-            closeModal();
-            // Optional: redirect to tenant dashboard
-            // You can handle this in your backend controller instead
-        },
-        onError: (errors) => {
-            if (errors.tenant_id) {
-                modalError.value = errors.tenant_id;
-            } else if (errors.message) {
-                modalError.value = errors.message;
-            } else {
-                modalError.value = "An error occurred while subscribing";
-            }
-        },
-    });
+    processing.value = true;
+
+    router.put(
+        route(`tenant.changeSubscription`, selectedPlan.value.id),
+        {},
+        {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                processing.value = false;
+
+                closeModal();
+                // Optional: redirect to tenant dashboard
+                // You can handle this in your backend controller instead
+            },
+            onError: (errors) => {
+                console.log(errors);
+                // if (errors.tenant_id) {
+                //     modalError.value = errors.tenant_id;
+                // } else
+                if (errors) {
+                    modalError.value = errors.error;
+                } else {
+                    modalError.value = "An error occurred while subscriping";
+                }
+            },
+        }
+    );
 };
 
 // Keyboard event listeners
@@ -130,17 +194,8 @@ onUnmounted(() => {
 
 <template>
     <div class="container mx-auto px-4 py-8">
-        <!-- Header Section -->
-        <div class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-gray-900 mb-4">
-                Choose Your Plan
-            </h1>
-            <p class="text-xl text-gray-600">
-                Select the perfect plan for your business needs
-            </p>
-        </div>
-
         <!-- Plans Grid -->
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div
                 v-for="(plan, index) in plans"
@@ -160,98 +215,130 @@ onUnmounted(() => {
                     </span>
                 </div>
 
-                <div class="px-6 py-8">
-                    <!-- Plan Header -->
-                    <div class="text-center mb-8">
-                        <h3 class="text-2xl font-bold text-gray-900 mb-2">
-                            {{ plan.name }}
-                        </h3>
-                        <p class="text-gray-600 mb-4">{{ plan.description }}</p>
+                <div class="flex flex-col justify-between  h-full">
+                    <div class="px-6 py-8">
+                        <!-- Plan Header -->
+                        <div class="text-center mb-8">
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2">
+                                {{ plan.name }}
+                            </h3>
+                            <p class="text-gray-600 mb-4">
+                                {{ plan.description }}
+                            </p>
 
-                        <div class="mb-4">
-                            <span class="text-4xl font-bold text-gray-900">
-                                ${{ formatPrice(plan.price) }}
-                            </span>
-                            <span class="text-gray-600"
-                                >/ {{ plan.interval }}</span
+                            <div class="mb-4">
+                                <span class="text-4xl font-bold text-gray-900">
+                                    ${{ formatPrice(plan.price) }}
+                                </span>
+                                <span class="text-gray-600"
+                                    >/ {{ plan.interval }}</span
+                                >
+                            </div>
+
+                            <!-- Trial Badge -->
+                            <div
+                                v-if="plan.trial_days > 0"
+                                class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm inline-block mb-4"
                             >
+                                {{ plan.trial_days }} days free trial
+                            </div>
                         </div>
 
-                        <!-- Trial Badge -->
-                        <div
-                            v-if="plan.trial_days > 0"
-                            class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm inline-block mb-4"
-                        >
-                            {{ plan.trial_days }} days free trial
-                        </div>
+                        <!-- Features List -->
+                        <ul class="space-y-3 mb-8">
+                            <li
+                                v-for="feature in plan.features"
+                                :key="feature"
+                                class="flex items-center"
+                            >
+                                <svg
+                                    class="w-5 h-5 text-green-500 mr-3"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M5 13l4 4L19 7"
+                                    ></path>
+                                </svg>
+                                <span class="text-gray-700">{{
+                                    formatFeature(feature)
+                                }}</span>
+                            </li>
+                        </ul>
                     </div>
 
-                    <!-- Features List -->
-                    <ul class="space-y-3 mb-8">
-                        <li
-                            v-for="feature in plan.features"
-                            :key="feature"
-                            class="flex items-center"
+                    <div class=" p-5 ">
+                        <button
+                            @click="openEditSubscriptionModal(plan)"
+                            :disabled="processing"
+                            class="w-full hover:cursor-pointer font-bold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            :class="
+                                index === 1
+                                    ? 'bg-blue-700 hover:bg-blue-800 text-white'
+                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                            "
                         >
-                            <svg
-                                class="w-5 h-5 text-green-500 mr-3"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                            <span
+                                v-if="
+                                    processing && selectedPlan?.id === plan.id
+                                "
                             >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M5 13l4 4L19 7"
-                                ></path>
-                            </svg>
-                            <span class="text-gray-700">{{
-                                formatFeature(feature)
-                            }}</span>
-                        </li>
-                    </ul>
-
-                    <!-- Subscribe Button -->
-                    <button
-                        @click="openSubscriptionModal(plan)"
-                        :disabled="form.processing"
-                        class="w-full font-bold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        :class="
-                            index === 1
-                                ? 'bg-blue-700 hover:bg-blue-800 text-white'
-                                : 'bg-blue-600 hover:bg-blue-700 text-white'
-                        "
-                    >
-                        <span
-                            v-if="form.processing && selectedPlan?.id === plan.id"
-                        >
-                            <svg
-                                class="inline w-4 h-4 mr-2 animate-spin"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                            >
-                                <circle
-                                    class="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    stroke-width="4"
-                                ></circle>
-                                <path
-                                    class="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                ></path>
-                            </svg>
-                            Processing...
-                        </span>
-                        <span v-else>Get Started</span>
-                    </button>
+                                <svg
+                                    class="inline w-4 h-4 mr-2 animate-spin"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle
+                                        class="opacity-25"
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        stroke="currentColor"
+                                        stroke-width="4"
+                                    ></circle>
+                                    <path
+                                        class="opacity-75"
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    ></path>
+                                </svg>
+                                Processing...
+                            </span>
+                            <span v-else>edit</span>
+                        </button>
+                    </div>
+                    <!-- SSubscripe Button -->
                 </div>
             </div>
         </div>
+
+
+        
+
+        <AddEditPlans
+                        :plans="props.plans"
+                        :item="tenant"
+                        :isDialogOpen
+                        @close="isDialogOpen = false"
+                        :action
+                    />
+                    <Input
+                        class="max-w-sm"
+                        placeholder="Filter tenant name..."
+                        :model-value="table.getColumn('name')?.getFilterValue()"
+                        @update:model-value="
+                            table.getColumn('name')?.setFilterValue($event)
+                        "
+                    />
+
+
+
+
+        
 
         <!-- Tenant Selection Modal -->
         <Teleport to="body">
@@ -265,41 +352,21 @@ onUnmounted(() => {
                     @click.stop
                 >
                     <div class="mt-3 text-center">
-                        <h3 class="text-lg font-medium text-gray-900">
-                            Select Tenant
-                        </h3>
-                        <div class="mt-2 px-7 py-3">
-                            <select
-                                v-model="form.tenant_id"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                :disabled="form.processing"
-                            >
-                                <option value="">Select a tenant...</option>
-                                <option
-                                    v-for="tenant in tenants"
-                                    :key="tenant.id"
-                                    :value="tenant.id"
-                                >
-                                    {{ tenant.name || tenant.id }}
-                                </option>
-                            </select>
-                        </div>
-
                         <!-- Error Message -->
                         <div
-                            v-if="modalError || form.errors.tenant_id"
+                            v-if="modalError"
                             class="mt-2 text-red-600 text-sm"
                         >
-                            {{ modalError || form.errors.tenant_id }}
+                            {{ modalError }}
                         </div>
 
                         <div class="items-center px-4 py-3">
                             <button
                                 @click="confirmSubscription"
-                                :disabled="!form.tenant_id || form.processing"
+                                :disabled="processing"
                                 class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <span v-if="form.processing">
+                                <span v-if="processing">
                                     <svg
                                         class="inline w-4 h-4 mr-2 animate-spin"
                                         fill="none"
@@ -325,7 +392,7 @@ onUnmounted(() => {
                             </button>
                             <button
                                 @click="closeModal"
-                                :disabled="form.processing"
+                                :disabled="processing"
                                 class="mt-2 px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:opacity-50"
                             >
                                 Cancel

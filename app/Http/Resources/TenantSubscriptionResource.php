@@ -45,9 +45,9 @@ class TenantSubscriptionResource extends JsonResource
             }),
             
             
-            'purchasePlan' => new PurchasePlanResource($this->whenLoaded('purchasePlan')),
+            'plan' => new PlanResource($this->whenLoaded('plan')),
 
-            // 'purchasePlan' => $this->whenLoaded('purchasePlan') ??  '',
+            // 'plan' => $this->whenLoaded('plan') ??  '',
 
         ];    }
 }

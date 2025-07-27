@@ -4,52 +4,65 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TenantSubscriptionResource;
-use App\Models\PurchasePlan;
+use App\Models\Plan;
 use App\Models\Tenant;
-use App\Services\PurchasePlanService;
+use App\Services\PlanService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 
-class PurchasePlanController extends Controller
+class SubscriptionController extends Controller
 {
-    protected $purchasePlanService;
+    protected $planService;
 
-    public function __construct(PurchasePlanService $purchasePlanService)
+    public function __construct(PlanService $planService)
     {
-        $this->purchasePlanService = $purchasePlanService;
+        $this->planService = $planService;
     }
 
-    /**
-     * Get all available purchase plans
-     */
-    public function index(Request $request)
+
+    ///////////////////////////////// this part for manual renewal of subscription////////////////////////////////////////////////////
+        public function renewSubscription(Request $request, $subscriptionId)
     {
         try {
-            $plans = $this->purchasePlanService->getAvailablePlans();
-            return Inertia::render('PurchasePlans' , [
-                'type' => $request->type,   /// tyes  select for first time , or change plan
-                'plans' => $plans->map(function ($plan) {
-                    return [
-                        'id' => $plan->id,
-                        'name' => $plan->name,
-                        'description' => $plan->description,
-                        'price' => $plan->price,
-                        'currency' => $plan->currency,
-                        'interval' => $plan->interval,
-                        'features' => $plan->features,
-                        'trial_days' => $plan->trial_days,
-                        'sort_order' => $plan->sort_order
-                    ];
-                })
-            ]);
+            $subscription = TenantSubscription::findOrFail($subscriptionId);
+            
+            // Dispatch the renewal job immediately
+            ProcessSubscriptionRenewal::dispatch($subscriptionId);
+            return back()->with('success'  , 'Renewal process started');
+            
+
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch plans: ' . $e->getMessage()
-            ], 500);
+            return back()->with('error'  , $e->getMessage());
         }
+
     }
+
+    public function bulkRenew(Request $request)
+    {
+        $subscriptionIds = $request->validate([
+            'subscription_ids' => 'required|array',
+            'subscription_ids.*' => 'exists:tenant_subscriptions,id'
+        ])['subscription_ids'];
+
+        foreach ($subscriptionIds as $id) {
+            // Dispatch with delay to prevent overwhelming the queue
+            ProcessSubscriptionRenewal::dispatch($id)->delay(now()->addSeconds(rand(1, 30)));
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => count($subscriptionIds) . ' subscription renewals queued'
+        ]);
+    }
+    ///////////////////////////////// end of part for manual renewal of subscription////////////////////////////////////////////////////
+
+
+
+
+
+
+
 
     /**
      * Get all tenants
@@ -79,9 +92,9 @@ class PurchasePlanController extends Controller
     // }
 
     /**
-     * Subscribe tenant to a plan
+     * SSubscripe tenant to a plan
      */
-    public function subscribe( PurchasePlan $plan)
+    public function subscripe( Plan $plan)
     {
         
         
@@ -94,13 +107,14 @@ class PurchasePlanController extends Controller
         }
         try {
             
-            $subscription = $this->purchasePlanService->subscribeTenant($tenant, $plan);
+            $subscription = $this->planService->subscripeTenant($tenant, $plan);
             
-            return to_route('dashboard')->with('success' , 'created successfully');
+            return back();
+            // return to_route('dashboard')->with('success' , 'created successfully');
             
             // return response()->json([
             //     'success' => true,
-            //     'message' => 'Successfully subscribed to ' . $plan->name,
+            //     'message' => 'Successfully subscriped to ' . $plan->name,
             //     'subscription' => [
             //         'id' => $subscription->id,
             //         'tenant_id' => $subscription->tenant_id,
@@ -120,7 +134,7 @@ class PurchasePlanController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to subscribe: ' . $e->getMessage()
+                'message' => 'Failed to subscripe: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -139,7 +153,7 @@ class PurchasePlanController extends Controller
                 return back()->with('error' , 'no subscription found for this tenant');
             }
 
-            $subscription->load('purchasePlan');
+            $subscription->load('plan');
             
 
             $subscription = new TenantSubscriptionResource($subscription);
@@ -165,13 +179,13 @@ class PurchasePlanController extends Controller
             //         'id' => $subscription->id,
             //         'tenant_id' => $subscription->tenant_id,
             //         'plan' => [
-            //             'id' => $subscription->purchasePlan->id,
-            //             'name' => $subscription->purchasePlan->name,
-            //             'description' => $subscription->purchasePlan->description,
-            //             'price' => $subscription->purchasePlan->price,
-            //             'currency' => $subscription->purchasePlan->currency,
-            //             'interval' => $subscription->purchasePlan->interval,
-            //             'features' => $subscription->purchasePlan->features
+            //             'id' => $subscription->plan->id,
+            //             'name' => $subscription->plan->name,
+            //             'description' => $subscription->plan->description,
+            //             'price' => $subscription->plan->price,
+            //             'currency' => $subscription->plan->currency,
+            //             'interval' => $subscription->plan->interval,
+            //             'features' => $subscription->plan->features
             //         ],
             //         'status' => $subscription->status,
             //         'trial_ends_at' => $subscription->trial_ends_at,
@@ -190,51 +204,18 @@ class PurchasePlanController extends Controller
     }
 
 
-    /**
-     * Cancel tenant's subscription
-     */
-    public function cancelSubscription(Request $request)
-    {
-        try {
-            $tenant = Tenant::findOrFail(tenant('id'));
-            $subscription = $this->purchasePlanService->cancelSubscription($tenant);
-            
-            if (!$subscription) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No active subscription found'
-                ], 404);
-            }
-            
-            // return response()->json([
-            //     'success' => true,
-            //     'message' => 'Subscription cancelled successfully',
-            //     'subscription' => [
-            //         'id' => $subscription->id,
-            //         'status' => $subscription->status,
-            //         'cancelled_at' => $subscription->updated_at
-            //     ]
-            // ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to cancel subscription: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
+        /**
      * Upgrade/downgrade tenant's subscription
      */
-    public function changeSubscription(Request $request,  PurchasePlan $plan)
+    public function changeSubscription(Request $request,  Plan $plan )
     {
         $tenant = Tenant::findOrFail(tenant('id'));
         // Cancel existing subscription
         try {
-            $this->purchasePlanService->cancelSubscription($tenant);
+            $this->planService->cancelSubscription($tenant);
             
             // Create new subscription
-            $subscription = $this->purchasePlanService->subscribeTenant($tenant, $plan);
+            $subscription = $this->planService->subscripeTenant($tenant, $plan);
             
                         return to_route('dashboard')->with('success' , 'changed successfully');
 
@@ -258,4 +239,44 @@ class PurchasePlanController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Cancel tenant's subscription
+     */
+    public function cancelSubscription(Request $request)
+    {
+        try {
+            $tenant = Tenant::findOrFail(tenant('id'));
+            $subscription = $this->planService->cancelSubscription($tenant);
+
+
+            
+            if (!$subscription) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No active subscription found'
+                ], 404);
+            }
+
+            return back()->with('success' , 'cancelled succcessfully');
+            
+            // return response()->json([
+            //     'success' => true,
+            //     'message' => 'Subscription cancelled successfully',
+            //     'subscription' => [
+            //         'id' => $subscription->id,
+            //         'status' => $subscription->status,
+            //         'cancelled_at' => $subscription->updated_at
+            //     ]
+            // ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to cancel subscription: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+
 }

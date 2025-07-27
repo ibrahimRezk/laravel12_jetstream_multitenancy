@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PlanController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TenantController;
 use App\Http\Controllers\ProjectController;
-use App\Http\Controllers\PurchasePlanController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Middleware\CheckTenantUserMiddleware;
 use App\Http\Controllers\TenantDashboardController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -54,27 +56,36 @@ Route::middleware([
 
 
     Route::get('/dashboard', function () {
-         if(auth()->user()->main_site_admin == true)
-                {
-                    return Inertia::render('AdminDashboard');
-                }else{
-                    return Inertia::render('TenantDashboard');
-                }
+            // if(auth()->user()->main_site_admin == true)
+            //     {
+            //         return Inertia::render('AdminDashboard');
+                // }else{
+                    return Inertia::render('TenantDashboard' , ['tenantSubscription' => tenant()->currentSubscription(), ]);
+                // }
     })->name('dashboard');
 
-
-    // Route::get('/tenants', [PurchasePlanController::class, 'getTenants'])->name('getTenants');
     
-    // Tenant subscription management
-    Route::get('/tenant/purchase-plans', [PurchasePlanController::class, 'index'])->name('tenant.purchasePlans');
-    Route::get('/tenant/subscription', [PurchasePlanController::class, 'getTenantSubscription'])->name('tenant.getTenantSubscription');
-    Route::post('/tenant/subscribe/{plan}', [PurchasePlanController::class, 'subscribe'])->name('tenant.subscribe');
-    Route::put('/tenant/subscription/{plan}', [PurchasePlanController::class, 'changeSubscription'])->name('tenant.changeSubscription');
-    Route::delete('/tenant/cancel_subscription', [PurchasePlanController::class, 'cancelSubscription'])->name('tenant.cancelSubscription');
 
+    //tenantController /////////////////////////////////////////////////
+    Route::get('/tenant/purchase-plans', [TenantController::class, 'index'])->name('tenant.plans');
+    Route::get('addUser' ,[ TenantController::class , 'addUser'])->name('tenant.addUser');
+    Route::get('tenantSubscriptionDetails' , [TenantController::class , 'tenantSubscriptionDetails'])->name('tenantSubscriptionDetails');
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
+    
+    
+    ///  tenantSubsriptionController/////////////////////////////////////////////
+    Route::post('/tenant/subscripe/{plan}', [SubscriptionController::class, 'subscripe'])->name('tenant.subscripe');
+    Route::get('/tenant/subscription', [SubscriptionController::class, 'getTenantSubscription'])->name('tenant.getTenantSubscription');
+    Route::put('/tenant/subscription/{plan}/{tenant}', [SubscriptionController::class, 'changeSubscription'])->name('tenant.changeSubscription');
+    Route::delete('/tenant/cancel_subscription', [SubscriptionController::class, 'cancelSubscription'])->name('tenant.cancelSubscription');
+    Route::get('/tenant/renew_subscription/{supscriptionId}', [SubscriptionController::class, 'renewSubscription'])->name('tenant.renew_subscription');
+    ///  tenantSubsriptionController end/////////////////////////////////////////////
+    
 
-    Route::get('addtenant' ,[ PurchasePlanController::class , 'addTenant'])->name('addTenant');
-    Route::get('addUser' ,[ TenantDashboardController::class , 'addUser'])->name('tenant.addUser');
+    
+
 
 
 

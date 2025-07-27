@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { trans } from "laravel-vue-i18n";
+// import { trans } from "laravel-vue-i18n";
 import { router } from "@inertiajs/vue3";
 import { usePage } from "@inertiajs/vue3";
 

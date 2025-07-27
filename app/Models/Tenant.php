@@ -12,6 +12,8 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     use HasDatabase, HasDomains;
 
 
+
+
         public function owner()
     {
         return $this->belongsTo(User::class , 'ownerId');
@@ -64,7 +66,50 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             return false;
         }
 
-        $features = $subscription->purchasePlan->features ?? [];
+        $features = $subscription->plan->features ?? [];
         return in_array($feature, $features);
     }
+
+
+
+
+
+    
+
+
+        public function paymentMethods()
+    {
+        return $this->hasMany(TenantPaymentMethod::class);
+    }
+
+    public function defaultPaymentMethod()
+    {
+        return $this->paymentMethods()->where('is_default', true)->first();
+    }
+
+    public function hasValidPaymentMethod(): bool
+    {
+        $paymentMethod = $this->defaultPaymentMethod();
+        
+        if (!$paymentMethod) {
+            return false;
+        }
+
+        // Check if payment method is not expired
+        if ($paymentMethod->expires_at && $paymentMethod->expires_at->isPast()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function notificationEmail()
+    {
+        // Return the email for notifications
+        // You might have this stored in tenant data or related user
+        return $this->data['email'] ?? $this->domains->first()?->domain . '@example.com';
+    }
+
+
+
 }

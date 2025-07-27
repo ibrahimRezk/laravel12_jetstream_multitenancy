@@ -47,7 +47,7 @@ const props = defineProps({
     },
     action: {
         type: String,
-        default: '',
+        default: "",
     },
     plans: {
         type: Array,
@@ -65,13 +65,12 @@ const form = useForm({
 });
 
 const fillForm = () => {
-    form.name = props.item.name
-    form.email = props.item.email
+    form.name = props.item.name;
+    form.email = props.item.email;
     // form.password = props.item?.user?.password
     // form.password_confirmation = props.item?.user?.password_confirmation
-    form.subdomain = props.item?.domains[0].domain
-    form.plan_id = props.item?.subscription?.purchasePlan?.id
-
+    form.subdomain = props.item?.domains[0].domain;
+    form.plan_id = props.item?.subscription?.plan?.id;
 
     // Object.keys(form).forEach((key) => {
     //     item[key] !== undefined && key !== "name"
@@ -80,8 +79,8 @@ const fillForm = () => {
     // });
 };
 
-const addNewSubscription = ()=>{
- form.post(`/admin/subscribe`, {
+const addNewSubscription = () => {
+    form.post(`/admin/subscripe`, {
         preserveState: true,
         preserveScroll: true,
         onSuccess: () => {
@@ -95,69 +94,65 @@ const addNewSubscription = ()=>{
             } else if (errors.message) {
                 modalError.value = errors.message;
             } else {
-                modalError.value = "An error occurred while subscribing";
+                modalError.value = "An error occurred while subscriping";
             }
         },
     });
-}
+};
 
-const editSubscription = ()=>{
-                router.put(
-                    route(`admin.changeSubscription`, {
-                        tenantId: props.item.id,
-                        plan: form.plan_id
-                    }),
-                    {
-                        ...form,
-                        id: props.item.id, // tenant id
-                        // data: itemToSave.value,
-                    },
-                    {
-                        preserveScroll: true,
-                        preserveState: true,
-                        onBefore: () => {
-                            // isSaving.value = true;
-                        },
-                        onSuccess: () => {
-                                        closeModal();
+const editSubscription = () => {
+    router.put(
+        route(`admin.changeSubscription`, {
+            tenantId: props.item.id,
+            plan: form.plan_id,
+        }),
+        {
+            ...form,
+            id: props.item.id, // tenant id
+            // data: itemToSave.value,
+        },
+        {
+            preserveScroll: true,
+            preserveState: true,
+            onBefore: () => {
+                // isSaving.value = true;
+            },
+            onSuccess: () => {
+                closeModal();
 
-                            // // form.reset()   /// try it
-                            // isSaving.value = false;
-                            // closeDialogModal();
-
-                        },
-                        onFinish: () => {
-                            // isSaving.value = false;
-                            // usePage().props.menus.forEach((menu) => {
-                            //     menu.isActive
-                            //         ? (menu.open = true)
-                            //         : (menu.open = false);
-                            // });
-                        },
-                    });
-}
-
-
+                // // form.reset()   /// try it
+                // isSaving.value = false;
+                // closeDialogModal();
+            },
+            onFinish: () => {
+                // isSaving.value = false;
+                // usePage().props.menus.forEach((menu) => {
+                //     menu.isActive
+                //         ? (menu.open = true)
+                //         : (menu.open = false);
+                // });
+            },
+        }
+    );
+};
 
 const submit = () => {
-    if(props.action == 'edit'){
-        editSubscription()
-    }else{
-        addNewSubscription()
+    if (props.action == "edit") {
+        editSubscription();
+    } else {
+        addNewSubscription();
     }
 };
 
-
-
-
 watch(
     () => props.isDialogOpen,
-    () => (props.action == 'edit' ? fillForm(props.item) : '')
+    () => (props.action == "edit" ? fillForm(props.item) : "")
 );
 
 watch(
     () => props.isDialogOpen,
-    () =>  props.isDialogOpen == false ? form.reset() : '' )
+    () => (props.isDialogOpen == false ? form.reset() : "")
+);
 
 const isDialogOpen = ref(false);
 
@@ -170,7 +165,6 @@ watch(
     () => isDialogOpen.value,
     () => (isDialogOpen.value == false ? closeModal() : "")
 );
-
 
 const emit = defineEmits(["close"]);
 const closeModal = () => {

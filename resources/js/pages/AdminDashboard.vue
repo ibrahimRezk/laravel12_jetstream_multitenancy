@@ -3,6 +3,18 @@ import AppLayout from "@/layouts/AppLayout.vue";
 import { Link, Head, router } from "@inertiajs/vue3";
 import PlaceholderPattern from "../components/PlaceholderPattern.vue";
 
+import { useSubscription } from "@/composables/useSubscription";
+import Button from "@/components/ui/button/Button.vue";
+
+
+
+const {
+    fetchPlans,
+    fetchTenants,
+} = useSubscription();
+
+
+
 const breadcrumbs = [
     {
         title: "Dashboard",
@@ -56,20 +68,26 @@ const cancelSubscription = ()=>{
                 >
                     <!-- <PlaceholderPattern /> -->
 
-                    <Link
+                    <!-- <Link
                         :href="route('admin.getTenants')"
                         class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                     >
                         view all tenants
-                    </Link>
-                    <Link
-                        :href="route('admin.purchasePlans')"
-                        class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
+                    </Link> -->
+                   <Button variant="outline"
+                    @click="fetchTenants()"
+                        class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:cursor-pointer"
+                    >
+                        view all tenants
+                    </Button>
+                   <Button variant="outline"
+                    @click="fetchPlans('admin')"
+                        class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:cursor-pointer"
                     >
                         view plans
-                    </Link>
+                    </Button>
                     <!-- <Link
-                        :href="route('admin.purchasePlan')"
+                        :href="route('admin.plan')"
                         class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                     >
                         choose a paln
@@ -81,7 +99,7 @@ const cancelSubscription = ()=>{
                         view subscriptions 
                     </Link>
                     <Link
-                        :href="route('admin.purchasePlan' , {type:'changePlan'})"
+                        :href="route('admin.plan' , {type:'changePlan'})"
                         class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                     >
                         change paln
