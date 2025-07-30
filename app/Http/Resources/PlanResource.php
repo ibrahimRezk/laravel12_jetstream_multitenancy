@@ -18,6 +18,8 @@ class PlanResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,
+            'price_id_on_stripe' => $this->price_id_on_stripe,
+            'product_id_on_stripe' => $this->product_id_on_stripe,
             'price' => $this->price,
             'currency' => $this->currency,
             'interval' => $this->interval,
@@ -28,10 +30,10 @@ class PlanResource extends JsonResource
             // 'created_at' => $this->created_at,
             // 'updated_at' => $this->updated_at,
 
-                   'created_at' => $this->when($this->created_at, function () {
+            'created_at' => $this->when($this->created_at, function () {
                 return $this->created_at->isoFormat('Do MMMM YYYY , h:mm a');
             }),
-                   'updated_at' => $this->when($this->updated_at, function () {
+            'updated_at' => $this->when($this->updated_at, function () {
                 return $this->updated_at->isoFormat('Do MMMM YYYY , h:mm a');
             }),
         ];

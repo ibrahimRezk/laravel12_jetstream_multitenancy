@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -18,6 +17,8 @@ return new class extends Migration
             $table->decimal('price', 10, 2);
             $table->string('currency', 3)->default('USD');
             $table->string('interval')->default('monthly'); // monthly, yearly
+            $table->json('price_id_on_stripe')->nullable();
+            $table->json('product_id_on_stripe')->nullable();
             $table->json('features')->nullable();
             $table->boolean('is_active')->default(true);
             $table->integer('trial_days')->default(0);

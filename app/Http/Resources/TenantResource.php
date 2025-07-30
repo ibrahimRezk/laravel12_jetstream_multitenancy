@@ -39,12 +39,12 @@ class TenantResource extends JsonResource
             /// to show all items as one item not nested item  these lines added :
             'name' => $owner->name,
             'email' => $owner->email,
-            'status' => $subscriptions->last()->status,
-            'plan' => $subscriptions->last()->plan->name,
-            'interval' => $subscriptions->last()->plan->interval,
-            'price' => $subscriptions->last()->price,
-            'ends_at' => $subscriptions->last()->ends_at?->isoFormat('Do MMMM YYYY , h:mm a'),
-            'trial_ends_at' => $subscriptions->last()->trial_ends_at->isoFormat('Do MMMM YYYY , h:mm a'),
+            'status' => $subscriptions?->last()?->status ?? '',
+            'plan' => $subscriptions?->last()?->plan->name ?? '',
+            'interval' => $subscriptions?->last()?->plan->interval ?? '',
+            'price' => $subscriptions?->last()?->price ?? '',
+            'ends_at' => $subscriptions?->last()?->ends_at?->isoFormat('Do MMMM YYYY , h:mm a') ?? '',
+            'trial_ends_at' => $subscriptions?->last()?->trial_ends_at->isoFormat('Do MMMM YYYY , h:mm a') ?? '',
 ///////////////////////////////////////////////////////////////////////////
 
                    'created_at' => $this->when($this->created_at, function () {

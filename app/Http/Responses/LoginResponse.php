@@ -26,7 +26,8 @@ class LoginResponse implements LoginResponseContract
         } else { // tenant
 return $request->wantsJson()
                 ? response()->json(['two_factor' => false])
-                : redirect()->intended();            
+                // : redirect(route('tenant.dashboard')); // redirect to tenant dashboard       
+                : redirect()->intended(route('tenant.dashboard')); // redirect to tenant dashboard       
              // : redirect()->intended($this->redirect());
         }
     }

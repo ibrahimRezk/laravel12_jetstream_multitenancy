@@ -81,6 +81,8 @@ const editMode = ref(false);
 const form = useForm({
     name: "",
     description: "",
+    product_id_on_stripe: "",
+    price_id_on_stripe: "",
     price: "",
     currency: "",
     interval: "",
@@ -294,6 +296,50 @@ const breadcrumbs = [
                                             />
                                         </div>
                                         <div class="grid gap-2 mt-4">
+                                            <Label for="name">
+                                                product id on stripe
+                                            </Label>
+                                            <Input
+                                                id="product_id_on_stripe"
+                                                v-model="
+                                                    form.product_id_on_stripe
+                                                "
+                                                type="text"
+                                                class="mt-1 block w-full"
+                                                autofocus
+                                                autocomplete="product_id_on_stripe"
+                                            />
+                                            <InputError
+                                                class="mt-2"
+                                                :message="
+                                                    props.errors
+                                                        ?.product_id_on_stripe
+                                                "
+                                            />
+                                        </div>
+                                        <div class="grid gap-2 mt-4">
+                                            <Label for="name">
+                                                price id on stripe
+                                            </Label>
+                                            <Input
+                                                id="price_id_on_stripe"
+                                                v-model="
+                                                    form.price_id_on_stripe
+                                                "
+                                                type="text"
+                                                class="mt-1 block w-full"
+                                                autofocus
+                                                autocomplete="price_id_on_stripe"
+                                            />
+                                            <InputError
+                                                class="mt-2"
+                                                :message="
+                                                    props.errors
+                                                        ?.price_id_on_stripe
+                                                "
+                                            />
+                                        </div>
+                                        <div class="grid gap-2 mt-4">
                                             <Label for="name"> price </Label>
                                             <Input
                                                 id="price"
@@ -498,7 +544,7 @@ const breadcrumbs = [
                                     v-if="plan.id == popularPlan?.id"
                                 >
                                     <span
-                                        class="bg-gradient-to-r from-orange-500  to-red-500 text-white px-3 py-0.5 rounded-full text-sm font-medium"
+                                        class="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-0.5 rounded-full text-sm font-medium"
                                     >
                                         Most Popular
                                     </span>

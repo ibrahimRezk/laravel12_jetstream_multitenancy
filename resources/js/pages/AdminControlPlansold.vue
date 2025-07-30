@@ -17,7 +17,7 @@ const props = defineProps({
         type: Object,
         default: () => {},
     },
-}); 
+});
 
 const page = usePage();
 
@@ -110,7 +110,7 @@ const confirm = () => {
     processing.value = true;
 
     router.post(
-        route(`tenant.subscripe`, selectedPlan.value.id),
+        route(`tenant.subscribe`, selectedPlan.value.id),
         {},
         {
             preserveState: true,
@@ -215,7 +215,7 @@ onUnmounted(() => {
                     </span>
                 </div>
 
-                <div class="flex flex-col justify-between  h-full">
+                <div class="flex flex-col justify-between h-full">
                     <div class="px-6 py-8">
                         <!-- Plan Header -->
                         <div class="text-center mb-8">
@@ -271,7 +271,7 @@ onUnmounted(() => {
                         </ul>
                     </div>
 
-                    <div class=" p-5 ">
+                    <div class="p-5">
                         <button
                             @click="openEditSubscriptionModal(plan)"
                             :disabled="processing"
@@ -311,34 +311,26 @@ onUnmounted(() => {
                             <span v-else>edit</span>
                         </button>
                     </div>
-                    <!-- SSubscripe Button -->
+                    <!-- Ssubscribe Button -->
                 </div>
             </div>
         </div>
 
-
-        
-
         <AddEditPlans
-                        :plans="props.plans"
-                        :item="tenant"
-                        :isDialogOpen
-                        @close="isDialogOpen = false"
-                        :action
-                    />
-                    <Input
-                        class="max-w-sm"
-                        placeholder="Filter tenant name..."
-                        :model-value="table.getColumn('name')?.getFilterValue()"
-                        @update:model-value="
-                            table.getColumn('name')?.setFilterValue($event)
-                        "
-                    />
-
-
-
-
-        
+            :plans="props.plans"
+            :item="tenant"
+            :isDialogOpen
+            @close="isDialogOpen = false"
+            :action
+        />
+        <Input
+            class="max-w-sm"
+            placeholder="Filter tenant name..."
+            :model-value="table.getColumn('name')?.getFilterValue()"
+            @update:model-value="
+                table.getColumn('name')?.setFilterValue($event)
+            "
+        />
 
         <!-- Tenant Selection Modal -->
         <Teleport to="body">

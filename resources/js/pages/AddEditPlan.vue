@@ -8,7 +8,7 @@ import PrimaryButton from "@/components/old/PrimaryButton.vue";
 import SecondaryButton from "@/components/old/SecondaryButton.vue";
 import TextInput from "@/components/old/TextInput.vue";
 
-import { 
+import {
     Select,
     SelectContent,
     SelectGroup,
@@ -80,7 +80,7 @@ const fillForm = () => {
 };
 
 const addNewSubscription = () => {
-    form.post(`/admin/subscripe`, {
+    form.post(`/admin/subscribe`, {
         preserveState: true,
         preserveScroll: true,
         onSuccess: () => {

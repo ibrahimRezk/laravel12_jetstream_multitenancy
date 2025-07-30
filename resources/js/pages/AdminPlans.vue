@@ -91,7 +91,7 @@ const confirmSubscription = () => {
 
     modalError.value = "";
 
-    form.post(`/subscripe/${selectedPlan.value.id}`, { 
+    form.post(`/subscribe/${selectedPlan.value.id}`, {
         preserveState: true,
         preserveScroll: true,
         onSuccess: () => {
@@ -212,7 +212,7 @@ onUnmounted(() => {
                         </li>
                     </ul>
 
-                    <!-- SSubscripe Button -->
+                    <!-- Ssubscribe Button -->
                     <button
                         @click="openSubscriptionModal(plan)"
                         :disabled="form.processing"
@@ -224,7 +224,9 @@ onUnmounted(() => {
                         "
                     >
                         <span
-                            v-if="form.processing && selectedPlan?.id === plan.id"
+                            v-if="
+                                form.processing && selectedPlan?.id === plan.id
+                            "
                         >
                             <svg
                                 class="inline w-4 h-4 mr-2 animate-spin"

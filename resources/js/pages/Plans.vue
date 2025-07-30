@@ -1,19 +1,11 @@
 <script setup>
-import { ref, computed , watch} from "vue";
+import { ref, computed, watch } from "vue";
 import { router, useForm, usePage } from "@inertiajs/vue3";
 import { useSubscription } from "@/composables/useSubscription";
 import Button from "@/components/ui/button/Button.vue";
 
-
-
-const {
-    changeSubscription,
-    subscripeToPlan,
-    cancelSubscription,
-} = useSubscription();
-
-
-
+const { changeSubscription, subscribeToPlan, cancelSubscription } =
+    useSubscription();
 
 const props = defineProps({
     plans: {
@@ -23,18 +15,17 @@ const props = defineProps({
     tenantId: {
         type: Number,
         default: () => 0,
-        required: true
+        required: true,
     },
     type: {
         type: String,
         default: () => null,
     },
-    
+
     errors: {
         type: Object,
         default: () => {},
     },
-
 });
 
 const page = usePage();
@@ -49,7 +40,7 @@ const modalError = ref("");
 //     tenant_id: "",
 // });
 
-const processing = ref(false)
+const processing = ref(false);
 
 // Computed properties
 const toast = computed(() => {
@@ -74,9 +65,9 @@ const toast = computed(() => {
     };
 });
 
-// watch(()=> usePage().props.flash.error, 
+// watch(()=> usePage().props.flash.error,
 // ()=> usePage().props.flash.error != '' ? processing.value = false : '')
-// watch(()=> usePage().props.flash.error, 
+// watch(()=> usePage().props.flash.error,
 // ()=> usePage().props.flash.error != '' ? showModal.value = false : '')
 
 // Methods
@@ -100,7 +91,7 @@ const openSubscriptionModal = (plan) => {
 };
 
 const closeModal = () => {
-    if (processing.value == true ) return;
+    if (processing.value == true) return;
 
     showModal.value = false;
     selectedPlan.value = null;
@@ -108,8 +99,6 @@ const closeModal = () => {
     // form.clearErrors();
     modalError.value = "";
 };
-
-
 
 // const confirmSubscription = () => {
 
@@ -130,9 +119,7 @@ const closeModal = () => {
 
 //     processing.value = true
 
-    
-
-//     router.post(route(`tenant.subscripe` , selectedPlan.value.id),{}, {
+//     router.post(route(`tenant.subscribe` , selectedPlan.value.id),{}, {
 //         preserveState: true,
 //         preserveScroll: true,
 //         onSuccess: () => {
@@ -210,7 +197,7 @@ onUnmounted(() => {
 <template>
     <div class="container mx-auto px-4 py-8">
         <!-- Header Section -->
-         
+
         <div class="text-center mb-12">
             <h1 class="text-4xl font-bold text-gray-900 mb-4">
                 Choose Your Plan
@@ -292,7 +279,7 @@ onUnmounted(() => {
                         </li>
                     </ul>
 
-                    <!-- SSubscripe Button -->
+                    <!-- Ssubscribe Button -->
                     <button
                         @click="openSubscriptionModal(plan)"
                         :disabled="processing"
@@ -303,9 +290,7 @@ onUnmounted(() => {
                                 : 'bg-blue-600 hover:bg-blue-700 text-white'
                         "
                     >
-                        <span
-                            v-if="processing && selectedPlan?.id === plan.id"
-                        >
+                        <span v-if="processing && selectedPlan?.id === plan.id">
                             <svg
                                 class="inline w-4 h-4 mr-2 animate-spin"
                                 fill="none"
@@ -345,23 +330,35 @@ onUnmounted(() => {
                     @click.stop
                 >
                     <div class="mt-3 text-center">
-                       
-                        
-
                         <!-- Error Message -->
                         <div
-                            v-if="modalError "
+                            v-if="modalError"
                             class="mt-2 text-red-600 text-sm"
                         >
                             {{ modalError }}
                         </div>
+                        <a
+                            v-if="props.type == null"
+                            :href="route('tenant.checkout', { plan: selectedPlan })"
+                        
+
+                            target="_blank"
+                            class="bg-black text-white px-4 py-2 rounded-md mt-4 w-full"
+                        >
+                            confirm
+                        </a>
 
                         <div class="items-center px-4 py-3">
-                            <button
-                            v-if="props.type == null"
-
-                                @click="subscripeToPlan('tenant' , selectedPlan.id , tenantId)"
-                                :disabled=" processing"
+                            <!-- <button
+                                v-if="props.type == null"
+                                @click="
+                                    subscribeToPlan(
+                                        'tenant',
+                                        selectedPlan.id,
+                                        tenantId
+                                    )
+                                "
+                                :disabled="processing"
                                 class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <span v-if="processing">
@@ -387,11 +384,17 @@ onUnmounted(() => {
                                     Processing...
                                 </span>
                                 <span v-else>Confirm Subscription</span>
-                            </button>
-                            <button
-                             v-else
-                                @click="changeSubscription('tenant' , selectedPlan.id , tenantId)"
-                                :disabled=" processing"
+                            </button> -->
+                            <!-- <button
+                                v-else
+                                @click="
+                                    changeSubscription(
+                                        'tenant',
+                                        selectedPlan.id,
+                                        tenantId
+                                    )
+                                "
+                                :disabled="processing"
                                 class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <span v-if="processing">
@@ -417,8 +420,7 @@ onUnmounted(() => {
                                     Processing...
                                 </span>
                                 <span v-else>change Subscription</span>
-                            </button>
-
+                            </button> -->
 
                             <button
                                 @click="closeModal"

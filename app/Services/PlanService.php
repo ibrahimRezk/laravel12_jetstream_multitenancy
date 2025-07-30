@@ -10,6 +10,7 @@ use App\Models\TenantSubscription;
 use Illuminate\Support\Facades\DB;
 use App\Events\SubscriptionCreated;
 use Illuminate\Support\Facades\Log;
+use Laravel\Cashier\Subscription;
 
 class PlanService
 {
@@ -33,26 +34,41 @@ class PlanService
     }
 
 
-    public function subscripeTenant(Tenant $tenant, Plan $plan, $trialDays = null)
+    public function subscribeTenant(Tenant $tenant, Plan $plan, $trialDays = null)
     {
+
         try {
             return DB::transaction(function () use ($tenant, $plan, $trialDays) {
+
                 // Cancel existing subscription if any
                 $this->cancelExistingSubscription($tenant);
 
                 $trialDays = $trialDays ?? $plan->trial_days;
                 $trialEndsAt = $trialDays > 0 ? Carbon::now()->addDays($trialDays) : null;
 
-                $subscription = TenantSubscription::create([
+                $subscription =  TenantSubscription::updateOrCreate([
+                    'tenant_id' => $tenant->id,
+                    'plan_id' => $plan->id,
+                ],[
                     'tenant_id' => $tenant->id,
                     'plan_id' => $plan->id,
                     'status' => 'active',
                     'price' => $plan->price,
                     'trial_ends_at' => $trialEndsAt,
-                    'ends_at' => $this->calculateEndDate($plan, $trialEndsAt),
+                    'ends_at' => $this->calculateEndDate($plan, $trialEndsAt ),
                 ]);
 
-                Log::info('Tenant subscriped to plan', [
+
+                // $subscription = TenantSubscription::create([
+                //     'tenant_id' => $tenant->id,
+                //     'plan_id' => $plan->id,
+                //     'status' => 'active',
+                //     'price' => $plan->price,
+                //     'trial_ends_at' => $trialEndsAt,
+                //     'ends_at' => $this->calculateEndDate($plan, $trialEndsAt),
+                // ]);
+
+                Log::info('Tenant subscribed to plan', [
                     'tenant_id' => $tenant->id,
                     'plan_id' => $plan->id,
                     'subscription_id' => $subscription->id
@@ -68,7 +84,7 @@ class PlanService
                 return $subscription;
             });
         } catch (\Exception $e) {
-            Log::error('Failed to subscripe tenant to plan', [
+            Log::error('Failed to subscribe tenant to plan', [
                 'tenant_id' => $tenant->id,
                 'plan_id' => $plan->id,
                 'error' => $e->getMessage()
@@ -77,10 +93,29 @@ class PlanService
         }
     }
 
-    public function cancelSubscription(Tenant $tenant)
+    public function cancelSubscription(Tenant $tenant , $cancelType = 'at_the_end')
     {
         try {
-            return DB::transaction(function () use ($tenant) {
+            return DB::transaction(function () use ($tenant, $cancelType) {
+
+
+            $user = $tenant->owner; // Assuming the tenant has an owner user
+            if (!$user) {
+                throw new \Exception('Tenant owner not found');
+            }
+            
+            $subscription = Subscription::where('user_id', $user->id)->where('stripe_status', 'active')->first();
+            $type = $subscription->type;
+            if ($cancelType == 'immediate') {
+                $user->subscription($type)->cancelNow(); // immediate cancel
+            } else {
+                $user->subscription($type)->cancel();  // cancel at the end of subscription and no renewal
+            }            
+            ///////////////////////////////////////////////////////////////////////
+
+
+
+
                 $subscription = $tenant->currentSubscription();
                 if ($subscription) {
                     $subscription->update([

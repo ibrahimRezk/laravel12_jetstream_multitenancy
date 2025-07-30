@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Foundation\Application;
-use App\Jobs\ProcessSubscriptionRenewal;
 use App\Console\Commands\CheckExpiredSubscriptions;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -33,26 +32,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
     // new schadule added for the expired subscriptions command
     ->withSchedule(function (Schedule $schedule) {
-        $schedule->command(CheckExpiredSubscriptions::class)->daily();
-
-        // Check for renewals daily at 2 AM
-        $schedule->command('subscriptions:process-renewals')
-            ->dailyAt('02:00')
-            ->withoutOverlapping()
-            ->runInBackground();
-
         // Check for expired subscriptions every hour
         $schedule->command('subscriptions:check-expired')
             ->hourly()
             ->withoutOverlapping();
 
-        // Send renewal reminders 7 days before expiry
-        $schedule->command('subscriptions:send-renewal-reminders')
-            ->dailyAt('09:00');
     })
-
-
-
 
 
     ->withExceptions(function (Exceptions $exceptions): void {

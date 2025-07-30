@@ -77,7 +77,8 @@ export function useSubscription() {
         }
     };
 
-    const fetchTenantSubscription = async (sitetype, tenantId) => { // sitetype may be admin site or tenant 
+    const fetchTenantSubscription = async (sitetype, tenantId) => {
+        // sitetype may be admin site or tenant
         try {
             // router.get(`/tenant/${tenantId}/subscription`, {}, {
             router.get(
@@ -105,7 +106,7 @@ export function useSubscription() {
         }
     };
 
-    const subscripeToPlan = async (site, planId, tenantId) => {
+    const subscribeToPlan = async (site, planId, tenantId) => {
         console.log("hi");
         return new Promise((resolve, reject) => {
             try {
@@ -113,9 +114,9 @@ export function useSubscription() {
                 error.value = null;
 
                 router.post(
-                    route(`${site}.subscripe`, planId),
+                    route(`${site}.subscribe`, planId),
                     {
-                        // router.post(`/subscripe/${planId}`, {
+                        // router.post(`/subscribe/${planId}`, {
                         // tenant_id: tenantId
                     },
                     {
@@ -123,13 +124,13 @@ export function useSubscription() {
                         preserveState: true,
                         onSuccess: (page) => {
                             // Update current subscription after successful subscription
-                            fetchTenantSubscription(site ,tenantId);
+                            fetchTenantSubscription(site, tenantId);
                             resolve(page.props);
                         },
                         onError: (errors) => {
                             const errorMessage =
                                 Object.values(errors)[0] ||
-                                "Failed to subscripe";
+                                "Failed to subscribe";
                             error.value = errorMessage;
                             reject(new Error(errorMessage));
                         },
@@ -139,7 +140,7 @@ export function useSubscription() {
                     }
                 );
             } catch (err) {
-                error.value = err.message || "Failed to subscripe";
+                error.value = err.message || "Failed to subscribe";
                 subscriping.value = false;
                 reject(err);
             }
@@ -159,7 +160,7 @@ export function useSubscription() {
                     onSuccess: (page) => {
                         // Update current subscription after successful cancellation
                         // fetchTenantSubscription(site ,tenantId);
-                        currentSubscription.value = null
+                        currentSubscription.value = null;
                         resolve(page.props);
                     },
                     onError: (errors) => {
@@ -199,7 +200,7 @@ export function useSubscription() {
                         preserveState: true,
                         onSuccess: (page) => {
                             // Update current subscription after successful change
-                            fetchTenantSubscription(site ,tenantId);
+                            fetchTenantSubscription(site, tenantId);
                             resolve(page.props);
                         },
                         onError: (errors) => {
@@ -308,7 +309,7 @@ export function useSubscription() {
         fetchPlans,
         fetchTenants,
         fetchTenantSubscription,
-        subscripeToPlan,
+        subscribeToPlan,
         cancelSubscription,
         changeSubscription,
 

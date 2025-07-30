@@ -30,6 +30,8 @@ class PlanRequest extends FormRequest
                 Rule::unique('plans', 'name')->ignore($this->plan) // Ignore the current plan if updating
             ],
             'description' => 'nullable|string|max:1000',
+            'price_id_on_stripe' => 'required|string', // Add other intervals as needed
+            'product_id_on_stripe' => 'required|string', // Add other intervals as needed
             'price' => 'required|numeric|min:0',
             'currency' => 'required|string|max:3',
             'interval' => 'required|string|in:daily,weekly,monthly,yearly', // Add other intervals as needed

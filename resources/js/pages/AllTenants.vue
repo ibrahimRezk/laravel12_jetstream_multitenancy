@@ -261,7 +261,7 @@ const columns = [
                     name: "cancel subscription",
                     action: "cancelSubscription",
                     show:
-                        row.original.subscriptions.at(-1).status != "cancelled",
+                        row.original.subscriptions.at(-1) ? row.original.subscriptions.at(-1).status != "cancelled" : false,
                 },
             ];
 

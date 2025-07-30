@@ -15,11 +15,20 @@ class RegisterResponse implements RegisterResponseContract
     public function toResponse($request)
     {
 
-        $user = auth()->user();
-        $tenant = Tenant::findOrFail($user->tenants()->latest()->first()->id);
-        $domainData = $tenant->domains()->first();
+        return $request->wantsJson()
+            ? response()->json(['two_factor' => false])
+                : redirect()->intended(route('tenant.dashboard')); // redirect to tenant dashboard       
+
+
+
+
+        /// no need for this because it will redirect to the tenant subdomain but we need the tenant to go to the tenant dashboard on main site to choose plan and pay
+
+        // $user = auth()->user();
+        // $tenant = Tenant::findOrFail($user->tenants()->latest()->first()->id);
+        // $domainData = $tenant->domains()->first();
         
-        return Inertia::location('http://' . $domainData->domain  . '.' . config('tenancy.central_domains')[0] . ':8000' . '/dashboard');
+        // return Inertia::location('http://' . $domainData->domain  . '.' . config('tenancy.central_domains')[0] . ':8000' . '/dashboard');
 
     }
 }

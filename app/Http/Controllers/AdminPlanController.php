@@ -23,7 +23,7 @@ use App\Http\Resources\TenantSubscriptionResource;
 
 class AdminPlanController extends Controller
 {
-        private string $routeResourceName = 'admin.plans';
+    private string $routeResourceName = 'admin.plans';
 
     protected $planService;
 
@@ -46,7 +46,7 @@ class AdminPlanController extends Controller
                     'id' => $popularPlan->plan_id,
                     'occurrences' => $popularPlan->occurrences
                 ] : null,
-                
+
                 'routeResourceName' => $this->routeResourceName,
 
                 'plans' => $plans->map(function ($plan) {
@@ -54,7 +54,7 @@ class AdminPlanController extends Controller
                         'id' => $plan->id,
                         'name' => $plan->name,
                         'description' => $plan->description,
-                        'price' =>  (double)$plan->price *1 ,
+                        'price' => (double) $plan->price * 1,
                         'currency' => $plan->currency,
                         'interval' => $plan->interval,
                         'features' => $plan->features,
@@ -82,21 +82,23 @@ class AdminPlanController extends Controller
         $data['name'] = $request->name;
         $data['description'] = $request->description;
         $data['price'] = $request->price;
+        $data['price_id_on_stripe'] = $request->price_id_on_stripe;
+        $data['product_id_on_stripe'] = $request->product_id_on_stripe;
         $data['currency'] = $request->currency;
         $data['interval'] = $request->interval;
         $data['features'] = $modifiedFeatures;
         $data['trial_days'] = $request->trial_days;
         $data['sort_order'] = $plansCount + 1; // Increment sort order based on existing plans
 
-         Plan::create($data);
-return back()->with('success', 'Plan created successfully.');
+        Plan::create($data);
+        return back()->with('success', 'Plan created successfully.');
 
-        
+
     }
-    public function update(PlanRequest $request , Plan $plan)
+    public function update(PlanRequest $request, Plan $plan)
     {
 
-         $modifiedFeatures = [];
+        $modifiedFeatures = [];
         foreach ($request->features as $feature) {
             $feature = str_replace(' ', '_', $feature);
             $modifiedFeatures[] = $feature;
@@ -104,21 +106,23 @@ return back()->with('success', 'Plan created successfully.');
 
         $data['name'] = $request->name;
         $data['description'] = $request->description;
+        $data['price_id_on_stripe'] = $request->price_id_on_stripe;
+        $data['product_id_on_stripe'] = $request->product_id_on_stripe;
         $data['price'] = $request->price;
         $data['currency'] = $request->currency;
         $data['interval'] = $request->interval;
         $data['features'] = $modifiedFeatures;
         $data['trial_days'] = $request->trial_days;
 
-         $plan->update($data);
-return back()->with('success', 'Plan updated successfully.');
+        $plan->update($data);
+        return back()->with('success', 'Plan updated successfully.');
         // $feature = str_replace(' ', '_', $feature);
     }
 
 
-    public function destroy( $ids)
+    public function destroy($ids)
     {
- $all_ids = explode(',', $ids);
+        $all_ids = explode(',', $ids);
 
         foreach ($all_ids as $id) {
             $plan = Plan::find($id);
@@ -126,6 +130,6 @@ return back()->with('success', 'Plan updated successfully.');
             $plan->delete();
         }
         return redirect()->back()->with('success', 'item deleted successfully');
-        
+
     }
 }

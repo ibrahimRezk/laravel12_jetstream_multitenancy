@@ -80,7 +80,7 @@ const fillForm = () => {
 };
 
 const addNewSubscription = () => {
-    form.post(`/admin/subscripe`, {
+    form.post(`/admin/subscribe`, {
         preserveState: true,
         preserveScroll: true,
         onSuccess: () => {

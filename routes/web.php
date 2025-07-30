@@ -1,15 +1,20 @@
 <?php
 
-use App\Http\Controllers\AdminPlanController;
-use App\Http\Controllers\AdminSubscriptionController;
-use App\Http\Controllers\AdminTenantsController;
-use App\Models\TenantSubscription;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\WebhookController;
 use App\Models\User;
 use Inertia\Inertia;
+use App\Models\TenantSubscription;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use App\Http\Controllers\PlanController;
+use App\Http\Controllers\TenantController;
+use App\Http\Controllers\AdminPlanController;
+use App\Http\Controllers\AdminTenantsController;
+use App\Http\Controllers\TenantSubscriptionController;
+use App\Http\Controllers\AdminSubscriptionController;
 use App\Http\Middleware\CheckMainSiteAdminMiddleware;
+use Laravel\Cashier\Subscription;
 
 
 
@@ -20,22 +25,6 @@ foreach (config('tenancy.central_domains') as $domain) {
     Route::domain($domain)->group(function () {
         // your actual routes
 
-
-        // Webhook routes - exclude from CSRF protection
-Route::group(['prefix' => 'webhooks', 'middleware' => ['webhook.verify']], function () {
-    Route::post('/stripe', [WebhookController::class, 'handleStripe'])->name('webhooks.stripe');
-    Route::post('/paypal', [WebhookController::class, 'handlePaypal'])->name('webhooks.paypal');
-});
-
-// In app/Http/Kernel.php, exclude webhook routes from CSRF:
-// protected $except = [
-//     'webhooks/*',
-// ];
-
-
-
-
-
         Route::get('/', function () {
             return Inertia::render('Welcome', [
                 'canLogin' => Route::has('login'),
@@ -45,81 +34,112 @@ Route::group(['prefix' => 'webhooks', 'middleware' => ['webhook.verify']], funct
             ]);
         });
 
+        /// for main site admin only
         Route::middleware([
+            'web',
             'auth:sanctum',
             config('jetstream.auth_session'),
             'verified',
             CheckMainSiteAdminMiddleware::class
         ])->group(function () {
 
+            Route::get('/dashboard', DashboardController::class)->name('dashboard');
+            // Route::get('/dashboard', function () {
+            //     return Inertia::render('AdminDashboard');
+            // })->name('dashboard');
 
-            // Route::get('/dashboard', [DashboardController::class , 'handle'])->middleware('user.type.router');
+            /////////////////////////////// admin part ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // admin controle  Tenant subscriptions
+            Route::get('/admin/tenants', [AdminTenantsController::class, 'getTenants'])->name('admin.getTenants');
 
-            Route::get('/dashboard', function () {
-                // if(auth()->user()->main_site_admin == true)
-                // {
-                return Inertia::render('AdminDashboard');
-                // }else{
-                //     return Inertia::render('TenantDashboard');
-                // }
-            })->name('dashboard');
+            Route::get('/admin/purchase-plans', [AdminPlanController::class, 'index'])->name('admin.plans');
+            Route::post('/admin/store-purchase-plans', [AdminPlanController::class, 'store'])->name('admin.plans.store');
+            Route::put('/admin/update-purchase-plans/{plan}', [AdminPlanController::class, 'update'])->name('admin.plans.update');
+            Route::delete('/admin/delete-purchase-plans/{plan}', [AdminPlanController::class, 'destroy'])->name('admin.plans.destroy');
 
+            // Route::get('/admin/tenant/{tenantId}/subscription', [AdminSubscriptionController::class, 'getTenantSubscription'])->name('admin.getTenantSubscription');
+            Route::post('/admin/subscribe', [AdminSubscriptionController::class, 'subscribe'])->name('admin.subscribe');
+            Route::put('/admin/tenant/{tenantId}/subscription/{plan}', [AdminSubscriptionController::class, 'changeSubscription'])->name('admin.changeSubscription');
+            Route::delete('/admin/tenant/{tenantIds}/subscription', [AdminSubscriptionController::class, 'cancelSubscription'])->name('admin.cancelSubscription');
 
-
-            Route::middleware(['web'])->group(function () {
-
-
-                // Tenant subscription management
-
-                Route::get('/admin/tenants', [AdminTenantsController::class, 'getTenants'])->name('admin.getTenants');
-
-
-                Route::get('/admin/purchase-plans', [AdminPlanController::class, 'index'])->name('admin.plans');
-                Route::post('/admin/store-purchase-plans', [AdminPlanController::class, 'store'])->name('admin.plans.store');
-                Route::put('/admin/update-purchase-plans/{plan}', [AdminPlanController::class, 'update'])->name('admin.plans.update');
-                Route::delete('/admin/delete-purchase-plans/{plan}', [AdminPlanController::class, 'destroy'])->name('admin.plans.destroy');
-
-
-
-
-
-                // Route::get('/admin/tenant/{tenantId}/subscription', [AdminSubscriptionController::class, 'getTenantSubscription'])->name('admin.getTenantSubscription');
-                Route::post('/admin/subscripe', [AdminSubscriptionController::class, 'subscripe'])->name('admin.subscripe');
-                Route::put('/admin/tenant/{tenantId}/subscription/{plan}', [AdminSubscriptionController::class, 'changeSubscription'])->name('admin.changeSubscription');
-                Route::delete('/admin/tenant/{tenantIds}/subscription', [AdminSubscriptionController::class, 'cancelSubscription'])->name('admin.cancelSubscription');
-
-
-
-
-
-
-
-
-
-
-            });
         });
+        ///////////////////////////////end of admin part ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+        /////////////////////////////// tenant part ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /////// for tenants on the main site   .... add middleware to let only tenant owner to access here /////////////////////////////////////////////////////////////////
+        Route::middleware([
+            'web',
+            'auth:sanctum',
+            config('jetstream.auth_session'),
+            'verified',
+        ])->group(function () {
+            Route::get('/tenant/dashboard', function () {
+                // dd(User::find(2)->payload['data']['object']['lines']['data'][0]['plan']); //========================
+                // $plan = $payload['data']['object']['lines']['data']; //========================
+
+
+                return Inertia::render('TenantDashboard');
+            })->name('tenant.dashboard');
+
+            Route::get('/tenant/purchase-plans', [TenantController::class, 'index'])->name('tenant.plans');
+            Route::get('addUser', [TenantController::class, 'addUser'])->name('tenant.addUser');/// temporarly for testing     tobe deleted
+
+
+            Route::get('/tenant/checkout', [TenantSubscriptionController::class, 'checkout'])->name('tenant.checkout');
+            Route::get('/tenant/subscription', [TenantSubscriptionController::class, 'getTenantSubscription'])->name('tenant.getTenantSubscription');
+            Route::get('tenantSubscriptionDetails', [TenantSubscriptionController::class, 'tenantSubscriptionDetails'])->name('tenantSubscriptionDetails');
+            Route::put('/tenant/subscription/{plan}/{tenant}', [TenantSubscriptionController::class, 'changeSubscription'])->name('tenant.changeSubscription');
+            Route::delete('/tenant/cancel_subscription', [TenantSubscriptionController::class, 'cancelSubscription'])->name('tenant.cancelSubscription');
+
+
+            // Route::get('/tenant/subscribe', [TenantSubscriptionController::class, 'subscribe'])->name('tenant.subscribe');// this will be done after checkout ... code in listenrs folder
+            // Route::get('/tenant/renew_subscription/{supscriptionId}', [TenantSubscriptionController::class, 'renewSubscription'])->name('tenant.renew_subscription');  // this will be done automatically on stripe 
+
+
+            // Feature-specific routes
+            Route::get('/advanced-features', function () {
+                return view('tenant.advanced');
+            })->middleware('check.subscription:advanced_features')->name('tenant.advanced');
+
+        });
+        /////////////////////////////// end of tenant part ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     });
+
 }
 
+
+
 // remains    
-// complete tenant.renew_subscription view and proccess
-// check tenantPaymentMethod  how to work with it and how to add it in the tenant side
-// complete paymentService->chargePaymentMethod logic
-// in planService in subscripeTenant method we need to add the tenantPaymentMethod to the subscription
-// check config.quoe
-// check app => console jobs events listeners mail
-// check if the reminder mail link works
+
+
+//  لاختبار الالغاء بشكل سليم ننشئ خطة لمدة يوم واحد فقط ثم نقوم بالالغاء وانتظار النتيجة هل سيتم الغاؤها 
+//  اذا حدث تغيير للخطة يتم الغاء القديمة هنا وعلى السترايب  cancel it in subscription table and it will automatically canceled on stripe
+//  تغيير  بيانات تواريخ نهاية الاشتراك للمشتركين بقاعدة البيانات عند الاشتراك  اول مرة بالبيانات القادمة من سترايب
+
+// handle change and  upgrade subscription 
+// in planservice check ends at in case of renew
+// check config.queues.php
+// check app =>  mail
+
+
+
+
 // search for url('    and fix routes
-// merge subscriptionController and RenewalDashboardController   ... they do the same job and make dashboard page for the user
+// check notificationEmail()
+
 
 
 // composable.js , middleware , offers , design  
- // details:
+// details:
 // use useSubscription.js composable on admin side
 // prevent user from going to view subscription if he has no one and prevent from call cancel if he has no subscription 
 // AdmincontrolPlans   add old price and new price as an offer
 // modify design on tenant side
+// add cancel now on admin and tenant    immediate   at_the_end
 
 
 
@@ -165,11 +185,12 @@ Route::group(['prefix' => 'webhooks', 'middleware' => ['webhook.verify']], funct
 // create RenewalDashboardController 
 // create payment service 
 // create payment result service
-// create TenantPaymentMethod and migration
 // when creating a user for any tenant we have to add this line    after creating user $user = User::create(.....)
 // $user->tenants()->attach(tenant('id')); /// very important line to attatch users with there tenants and we control access to only this tenant  from CheckTenantUserMiddleware 
 
 // create config/subscription.php
+// install composer require stripe/stripe-php
+// install paypal
 
 //create these files in app/notifications :
 // SubscriptionRenewalSuccess ,PaymentFailureNotification ,SubscriptionRenewalFailure ,PaymentMethodRequired 
@@ -235,13 +256,11 @@ Route::group(['prefix' => 'webhooks', 'middleware' => ['webhook.verify']], funct
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // make command  app/Console/Commands/CheckExpiredSubscriptions.php
-// make command  app/Console/Commands/ProcessDueRenewals .php for processing renewals
-// make job ProcessSubscriptionRenewal
 // make mail SubscriptionWelcome  and email view
 // add event SubscriptionCreated  check function broadcastOn   channel 
 // add listener  SendSubscriptionWelcomeEmail
 // Register the event listener in app/Providers/EventServiceProvider.php  /// no need in laravel 12
-
+// create event listener for webhook and register it in appServiceProvider  ... important to make changes in other tables in succees or failure
 
 
 // check expired tenants/////////////////////////////////////////////
@@ -263,9 +282,9 @@ Route::group(['prefix' => 'webhooks', 'middleware' => ['webhook.verify']], funct
 
 
 //////////////////// for renewal of subscriptions /////////////////////////////////////////////////////////
-// inside controller =>  SubscriptionController.php
-// for manual renewal we need to create a method renewSubscription in SubscriptionController.php
-// and a method bulkRenew for bulk renewals in SubscriptionController.php
+// inside controller =>  TenantSubscriptionController.php
+// for manual renewal we need to create a method renewSubscription in TenantSubscriptionController.php
+// and a method bulkRenew for bulk renewals in TenantSubscriptionController.php
 
 
 // for automatic renewal we need to create a command ProcessDueRenewals.php
@@ -289,7 +308,7 @@ Route::group(['prefix' => 'webhooks', 'middleware' => ['webhook.verify']], funct
 // remember to change url in the real site in this file =>  RegisterResponse
 // remember we use  subscriptions.at(-1).plan.name to get last subscription either active or canceled
 // remember to  arange  tenant route for middleware 'check.subscription' 
-
+// remember to call in console stripe listen --forward-to  localhost:8000/stripe/webhook to make webhook work
 // remember laravel herd will not work with subdomains because it has to be added manualy in C:\Windows\System32\drivers\etc
 
 
@@ -336,8 +355,6 @@ Route::group(['prefix' => 'webhooks', 'middleware' => ['webhook.verify']], funct
 // php artisan make:notification SubscriptionRenewalFailure
 // php artisan make:notification PaymentMethodRequired
 
-// # 4. Create the job
-// php artisan make:job ProcessSubscriptionRenewal
 
 // # 5. Create commands
 // php artisan make:command ProcessDueRenewals
@@ -411,18 +428,7 @@ Route::group(['prefix' => 'webhooks', 'middleware' => ['webhook.verify']], funct
 // $tenant = App\Models\Tenant::first();
 // $plan = App\Models\Plan::first();
 
-// # Create payment method
-// $paymentMethod = App\Models\TenantPaymentMethod::create([
-//     'tenant_id' => $tenant->id,
-//     'type' => 'card',
-//     'provider' => 'stripe',
-//     'provider_id' => 'pm_test_123',
-//     'last_four' => '4242',
-//     'brand' => 'visa',
-//     'expires_at' => now()->addYear(),
-//     'is_default' => true,
-//     'is_active' => true
-// ]);
+
 
 // # Create subscription
 // $subscription = App\Models\TenantSubscription::create([
@@ -432,8 +438,6 @@ Route::group(['prefix' => 'webhooks', 'middleware' => ['webhook.verify']], funct
 //     'ends_at' => now()->addDay() // Expires tomorrow
 // ]);
 
-// # Test renewal job
-// App\Jobs\ProcessSubscriptionRenewal::dispatch($subscription->id);
 
 // # Check job was queued
 // Queue::size('subscriptions')
@@ -460,11 +464,7 @@ Route::group(['prefix' => 'webhooks', 'middleware' => ['webhook.verify']], funct
 //         'status' => 'active',
 //         'ends_at' => now()->addDays(rand(1, 3))
 //     ]);
-    
-//     // Queue renewal with staggered delays
-//     App\Jobs\ProcessSubscriptionRenewal::dispatch($subscription->id)
-//         ->delay(now()->addSeconds($i * 2));
-// }
+
 
 // # Check queue size
 // Queue::size('subscriptions')

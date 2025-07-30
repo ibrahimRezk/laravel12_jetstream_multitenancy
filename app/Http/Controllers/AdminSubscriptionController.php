@@ -22,7 +22,7 @@ use App\Http\Resources\TenantSubscriptionResource;
 
 class AdminSubscriptionController extends Controller
 {
-        private string $routeResourceName = 'admin.subscription';
+    private string $routeResourceName = 'admin.subscription';
 
     protected $planService;
 
@@ -108,7 +108,7 @@ class AdminSubscriptionController extends Controller
     /**
      * Subscribe tenant to a plan
      */
-    public function subscripe(TenantRequest $request)
+    public function subscribe(TenantRequest $request)
     {
         try {
             $user = User::create([
@@ -133,7 +133,7 @@ class AdminSubscriptionController extends Controller
 
             $plan = Plan::find($request->plan_id);
 
-            $this->planService->subscripeTenant($tenant, $plan);
+            $this->planService->subscribeTenant($tenant, $plan);
 
             return back()->with('success', 'created successfully');
 
@@ -166,11 +166,11 @@ class AdminSubscriptionController extends Controller
             //     ], 400);
             // }
 
-            // $subscription = $this->planService->subscripeTenant($tenant, $plan);
+            // $subscription = $this->planService->subscribeTenant($tenant, $plan);
 
             // return response()->json([
             //     'success' => true,
-            //     'message' => 'Successfully subscriped to ' . $plan->name,
+            //     'message' => 'Successfully subscribed to ' . $plan->name,
             //     'subscription' => [
             //         'id' => $subscription->id,
             //         'tenant_id' => $subscription->tenant_id,
@@ -190,7 +190,7 @@ class AdminSubscriptionController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to subscripe: ' . $e->getMessage()
+                'message' => 'Failed to subscribe: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -332,7 +332,7 @@ class AdminSubscriptionController extends Controller
             $this->planService->cancelSubscription($tenant);
 
             // Create new subscription
-            $this->planService->subscripeTenant($tenant, $plan);
+            $this->planService->subscribeTenant($tenant, $plan);
 
             return back()->with('success', 'created successfully');
 
@@ -359,4 +359,12 @@ class AdminSubscriptionController extends Controller
             ], 500);
         }
     }
+
+
+
+
+    
+
+    
+
 }
