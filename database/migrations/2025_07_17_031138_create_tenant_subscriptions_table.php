@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -14,7 +13,7 @@ return new class extends Migration
         Schema::create('tenant_subscriptions', function (Blueprint $table) {
             $table->id();
             $table->text('notes')->nullable();
-            $table->decimal('price' , 12 ,2)->default(0);
+            $table->decimal('price', 12, 2)->default(0);
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->foreignId('plan_id')->constrained()->onDelete('cascade');
             $table->enum('status', ['active', 'inactive', 'cancelled', 'expired'])->default('active');

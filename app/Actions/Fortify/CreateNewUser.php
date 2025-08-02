@@ -26,24 +26,26 @@ class CreateNewUser implements CreatesNewUsers
         Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'subdomain' => ['required', 'alpha', 'max:255' , 'unique:domains,domain' ], // 'unique:domains' not working if we save subdomain with the full url because it bring for exampl eee.site.com not only eee
+            'subdomain' => ['required', 'alpha', 'max:255', 'unique:domains,domain'], // 'unique:domains' not working if we save subdomain with the full url because it bring for exampl eee.site.com not only eee
             'password' => $this->passwordRules(),
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
-            ])->validate();
-            $user =  User::create([
-                'name' => $input['name'],
-                'email' => $input['email'],
-                'password' => Hash::make($input['password']),
-            ]);
-            
-            
+        ])->validate();
+        $user = User::create([
+            'name' => $input['name'],
+            'email' => $input['email'],
+            'password' => Hash::make($input['password']),
+        ]);
 
-            $tenant = Tenant::create(
-                [
-                    'tenancy_db_name' => $input['subdomain'] ,  // must add this part other wise duplicate name error will appear
-                    'ownerId' => $user->id  // must add this part other wise duplicate name error will appear
-                    ]
-                );
+
+
+        $tenant = Tenant::create(
+            [
+                'tenancy_db_name' => $input['subdomain'],  // must add this part other wise duplicate name error will appear
+                'owner_id' => $user->id,  // must add this part other wise duplicate name error will appear
+                'plan_id' => null,
+                'tenant_subscription_id' => null
+            ]
+        );
 
 
         $tenant->domains()->create([

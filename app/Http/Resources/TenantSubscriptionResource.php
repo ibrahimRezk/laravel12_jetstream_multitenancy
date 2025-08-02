@@ -15,7 +15,7 @@ class TenantSubscriptionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
- return [
+        return [
             'id' => $this->id,
             'tenant_id' => $this->tenant_id,
             'status' => $this->status,
@@ -26,7 +26,7 @@ class TenantSubscriptionResource extends JsonResource
             // 'updated_at' => $this->updated_at,
             // 'ends_at' => $this->ends_at,
             // 'trial_ends_at' => $this->trial_ends_at,
-            
+
             'created_at' => $this->when($this->created_at, function () {
                 return $this->created_at->isoFormat('Do MMMM YYYY , h:mm a');
             }),
@@ -39,15 +39,16 @@ class TenantSubscriptionResource extends JsonResource
                 return $this->ends_at->isoFormat('Do MMMM YYYY , h:mm a');
             }),
 
-            'trial_ends_at' =>$this->trial_ends_at,
+            'trial_ends_at' => $this->trial_ends_at,
             'trial_ends_at_formatted' => $this->when($this->trial_ends_at, function () {
                 return $this->trial_ends_at->isoFormat('Do MMMM YYYY , h:mm a');
             }),
-            
-            
+
+
             'plan' => new PlanResource($this->whenLoaded('plan')),
 
             // 'plan' => $this->whenLoaded('plan') ??  '',
 
-        ];    }
+        ];
+    }
 }

@@ -69,18 +69,18 @@ const props = defineProps({
         type: Object,
         default: () => {},
     },
-    subscriptions: {
-        type: Array,
-        default: () => [],
-    },
+    // subscriptions: {
+    //     type: Array,
+    //     default: () => [],
+    // },
     plans: {
         type: Array,
         default: () => [],
     },
-    type: {
-        type: String,
-        default: () => null,
-    },
+    // type: {
+    //     type: String,
+    //     default: () => null,
+    // },
 
     errors: {
         type: Object,
@@ -261,7 +261,7 @@ const columns = [
                     name: "cancel subscription",
                     action: "cancelSubscription",
                     show:
-                        row.original.subscriptions.at(-1) ? row.original.subscriptions.at(-1).status != "cancelled" : false,
+                        row.original.plan ? row.original.plan.status != "cancelled" : false,
                 },
             ];
 
@@ -273,7 +273,7 @@ const columns = [
                 onChangeSubscription: (rowData) =>
                     handleChangeSubscription(rowData),
                 onCancelSubscription: (rowData) =>
-                    handleCncelSuvbscription(rowData),
+                    handleCancelSuvbscription(rowData),
             });
         },
     },
@@ -292,7 +292,7 @@ const handleChangeSubscription = (row) => {
 };
 
 const isAlertDialogOpen = ref(false);
-const handleCncelSuvbscription = (row) => {
+const handleCancelSuvbscription = (row) => {
     isAlertDialogOpen.value = true;
     itemsToBeDeleted.value = row.id; // tenant id
 };
@@ -349,7 +349,7 @@ watch(
 );
 
 const onPageChange = (page) => {
-    router.get(route("admin.getTenants", { page: page }));
+    router.get(route("admin.tenants", { page: page }));
 };
 
 const checkedItems = ref([]);

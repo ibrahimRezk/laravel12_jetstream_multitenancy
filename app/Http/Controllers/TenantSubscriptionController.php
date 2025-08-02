@@ -69,7 +69,8 @@ class TenantSubscriptionController extends Controller
                 return back()->with('error', 'Tenant not found');
             }
             // $tenant = Tenant::findOrFail(tenant('id'));
-            $subscription = $tenant->currentSubscription();
+            $subscription = $tenant->subscription;
+            // $subscription = $tenant->subscription();
 
             if ($subscription == null) {
                 return back()->with('error', 'no subscription found for this tenant');
@@ -128,7 +129,7 @@ class TenantSubscriptionController extends Controller
 
     public function tenantSubscriptionDetails()
     {
-        return Tenant::findOrFail(auth()->user()->tenants[0]?->id)?->currentSubscription();
+        return Tenant::findOrFail(auth()->user()->tenants[0]?->id)?->subscription;
     }
 
 

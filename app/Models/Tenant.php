@@ -11,21 +11,29 @@ class Tenant extends BaseTenant implements TenantWithDatabase
 {
     use HasDatabase, HasDomains;
 
-    
 
 
+// protected $casts = [
+//             'data' => 'array', // Cast the JSON column to an array
+//         ];
 
-        public function owner()
+    public function owner()
     {
-        return $this->belongsTo(User::class , 'ownerId');
-        
+        return $this->belongsTo(User::class, 'owner_id');
+
+    }
+    public function plan()
+    {
+        return $this->belongsTo(Plan::class, 'plan_id');
     }
 
 
-          public function users()
+
+    public function users()
     {
         return $this->belongsToMany(User::class);
     }
+
 
 
     public function subscription()
@@ -33,19 +41,17 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         return $this->hasOne(TenantSubscription::class);
     }
 
+
     public function subscriptions()
     {
         return $this->hasMany(TenantSubscription::class);
     }
 
-
-
-
     public function currentSubscription()
     {
-        return $this->subscription()->where('status', 'active')->first() ;
+        return $this->subscription()->where('id', $this->tenant_subscription_id)->first();
+        // return $this->subscription()->where('status', 'active')->first();
     }
-
 
 
     public function hasActiveSubscription()

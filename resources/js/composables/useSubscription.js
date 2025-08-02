@@ -5,22 +5,22 @@ export function useSubscription() {
     // State
     const plans = ref([]);
     const tenants = ref([]);
-    const currentSubscription = ref(null);
+    const subscription = ref(null);
     const loading = ref(false);
     const error = ref(null);
     const subscriping = ref(false);
 
     // Computed
     const hasActiveSubscription = computed(() => {
-        return currentSubscription.value && currentSubscription.value.is_active;
+        return subscription.value && subscription.value.is_active;
     });
 
     const isOnTrial = computed(() => {
-        return currentSubscription.value && currentSubscription.value.on_trial;
+        return subscription.value && subscription.value.on_trial;
     });
 
     const subscriptionFeatures = computed(() => {
-        return currentSubscription.value?.plan?.features || [];
+        return subscription.value?.plan?.features || [];
     });
 
     // Inertia Methods
@@ -58,7 +58,7 @@ export function useSubscription() {
     const fetchTenants = async () => {
         try {
             router.get(
-                route("admin.getTenants"),
+                route("admin.tenants"),
                 {},
                 {
                     preserveScroll: true,
@@ -91,7 +91,7 @@ export function useSubscription() {
                     preserveState: true,
                     only: ["subscription"],
                     onSuccess: (page) => {
-                        currentSubscription.value = page.props.subscription;
+                        subscription.value = page.props.subscription;
                     },
                     onError: (errors) => {
                         console.error(
@@ -106,7 +106,7 @@ export function useSubscription() {
         }
     };
 
-    const subscribeToPlan = async (site, planId, tenantId) => {
+    const subscribeToPlan = async (site, plan_id, tenantId) => {
         console.log("hi");
         return new Promise((resolve, reject) => {
             try {
@@ -114,9 +114,9 @@ export function useSubscription() {
                 error.value = null;
 
                 router.post(
-                    route(`${site}.subscribe`, planId),
+                    route(`${site}.subscribe`, plan_id),
                     {
-                        // router.post(`/subscribe/${planId}`, {
+                        // router.post(`/subscribe/${plan_id}`, {
                         // tenant_id: tenantId
                     },
                     {
@@ -160,7 +160,7 @@ export function useSubscription() {
                     onSuccess: (page) => {
                         // Update current subscription after successful cancellation
                         // fetchTenantSubscription(site ,tenantId);
-                        currentSubscription.value = null;
+                        subscription.value = null;
                         resolve(page.props);
                     },
                     onError: (errors) => {
@@ -182,16 +182,16 @@ export function useSubscription() {
         });
     };
 
-    const changeSubscription = async (site, planId, tenantId) => {
+    const changeSubscription = async (site, plan_id, tenantId) => {
         return new Promise((resolve, reject) => {
             try {
                 loading.value = true;
                 error.value = null;
 
-                // router.put(`/tenant/${tenantId}/subscription/${planId}`, {}, {
+                // router.put(`/tenant/${tenantId}/subscription/${plan_id}`, {}, {
                 router.put(
                     route(`${site}.changeSubscription`, {
-                        plan: planId,
+                        plan: plan_id,
                         tenant: tenantId,
                     }),
                     {},
@@ -240,10 +240,10 @@ export function useSubscription() {
     };
 
     const getDaysUntilExpiry = () => {
-        if (!currentSubscription.value?.ends_at) return null;
+        if (!subscription.value?.ends_at) return null;
 
         const now = new Date();
-        const expiryDate = new Date(currentSubscription.value.ends_at);
+        const expiryDate = new Date(subscription.value.ends_at);
         const diffTime = expiryDate - now;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -251,10 +251,10 @@ export function useSubscription() {
     };
 
     const getDaysUntilTrialExpiry = () => {
-        if (!currentSubscription.value?.trial_ends_at) return null;
+        if (!subscription.value?.trial_ends_at) return null;
 
         const now = new Date();
-        const trialExpiry = new Date(currentSubscription.value.trial_ends_at);
+        const trialExpiry = new Date(subscription.value.trial_ends_at);
         console.log(trialExpiry);
         const diffTime = trialExpiry - now;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -263,9 +263,9 @@ export function useSubscription() {
     };
 
     const getSubscriptionStatus = () => {
-        if (!currentSubscription.value) return "none";
+        if (!subscription.value) return "none";
 
-        const subscription = currentSubscription.value;
+        const subscription = subscription.value;
 
         if (subscription.on_trial) {
             const trialDays = getDaysUntilTrialExpiry();
@@ -295,7 +295,7 @@ export function useSubscription() {
         // State
         plans,
         tenants,
-        currentSubscription,
+        subscription,
         loading,
         error,
         subscriping,

@@ -17,9 +17,11 @@ class TenantResource extends JsonResource
 
         $owner = new UserResource($this->whenLoaded('owner'));
         $subscription = new TenantSubscriptionResource($this->whenLoaded('subscription'));
+        $plan = new PlanResource($this->whenLoaded('plan'));
         $users =  UserResource::collection($this->whenLoaded('users'));
         $subscriptions =  TenantSubscriptionResource::collection($this->whenLoaded('subscriptions'));
-
+        
+        $curerentSubscription = $this->currentSubscription();
 
         return [
             'id' => $this->id,
@@ -34,17 +36,18 @@ class TenantResource extends JsonResource
             'owner' => $owner,
             'subscription' => $subscription,
             'subscriptions' => $subscriptions,
+            'currentSubscriptions' => $curerentSubscription,
             
 
             /// to show all items as one item not nested item  these lines added :
             'name' => $owner->name,
             'email' => $owner->email,
-            'status' => $subscriptions?->last()?->status ?? '',
-            'plan' => $subscriptions?->last()?->plan->name ?? '',
-            'interval' => $subscriptions?->last()?->plan->interval ?? '',
-            'price' => $subscriptions?->last()?->price ?? '',
-            'ends_at' => $subscriptions?->last()?->ends_at?->isoFormat('Do MMMM YYYY , h:mm a') ?? '',
-            'trial_ends_at' => $subscriptions?->last()?->trial_ends_at->isoFormat('Do MMMM YYYY , h:mm a') ?? '',
+            'status' => $curerentSubscription->status ?? '',
+            'plan' => $plan->name ?? '',
+            'interval' => $plan->interval ?? '',
+            'price' => $curerentSubscription->price ?? '',
+            'ends_at' =>$curerentSubscription?->ends_at?->isoFormat('Do MMMM YYYY , h:mm a') ?? '',
+            'trial_ends_at' =>  $curerentSubscription?->trial_ends_at?->isoFormat('Do MMMM YYYY , h:mm a') ?? '',
 ///////////////////////////////////////////////////////////////////////////
 
                    'created_at' => $this->when($this->created_at, function () {

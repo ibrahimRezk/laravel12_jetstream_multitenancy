@@ -50,17 +50,19 @@ foreach (config('tenancy.central_domains') as $domain) {
 
             /////////////////////////////// admin part ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // admin controle  Tenant subscriptions
-            Route::get('/admin/tenants', [AdminTenantsController::class, 'getTenants'])->name('admin.getTenants');
+            Route::get('/admin/tenants', [AdminTenantsController::class, 'index'])->name('admin.tenants');
+            // Route::get('/admin/tenant/{tenantId}/subscription', [AdminTenantsController::class, 'getTenantSubscription'])->name('admin.getTenantSubscription');
+            Route::post('/admin/tenant/subscribe', [AdminTenantsController::class, 'subscribe'])->name('admin.tenant.subscribe');
+            Route::put('/admin/tenant/{tenantId}/subscription/{plan}', [AdminTenantsController::class, 'changeSubscription'])->name('admin.changeSubscription');
+            Route::delete('/admin/tenant/{tenantIds}/subscription', [AdminTenantsController::class, 'cancelSubscription'])->name('admin.cancelSubscription');
+
+
 
             Route::get('/admin/purchase-plans', [AdminPlanController::class, 'index'])->name('admin.plans');
             Route::post('/admin/store-purchase-plans', [AdminPlanController::class, 'store'])->name('admin.plans.store');
             Route::put('/admin/update-purchase-plans/{plan}', [AdminPlanController::class, 'update'])->name('admin.plans.update');
             Route::delete('/admin/delete-purchase-plans/{plan}', [AdminPlanController::class, 'destroy'])->name('admin.plans.destroy');
 
-            // Route::get('/admin/tenant/{tenantId}/subscription', [AdminSubscriptionController::class, 'getTenantSubscription'])->name('admin.getTenantSubscription');
-            Route::post('/admin/subscribe', [AdminSubscriptionController::class, 'subscribe'])->name('admin.subscribe');
-            Route::put('/admin/tenant/{tenantId}/subscription/{plan}', [AdminSubscriptionController::class, 'changeSubscription'])->name('admin.changeSubscription');
-            Route::delete('/admin/tenant/{tenantIds}/subscription', [AdminSubscriptionController::class, 'cancelSubscription'])->name('admin.cancelSubscription');
 
         });
         ///////////////////////////////end of admin part ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -96,7 +98,7 @@ foreach (config('tenancy.central_domains') as $domain) {
 
 
             // Route::get('/tenant/subscribe', [TenantSubscriptionController::class, 'subscribe'])->name('tenant.subscribe');// this will be done after checkout ... code in listenrs folder
-            // Route::get('/tenant/renew_subscription/{supscriptionId}', [TenantSubscriptionController::class, 'renewSubscription'])->name('tenant.renew_subscription');  // this will be done automatically on stripe 
+            // Route::get('/tenant/renew_subscription/{supscriptionId}', [TenantSubscriptionController::class, 'renewSubscription'])->name('tenant.renew_subscription');  // this will be done automatically on stripe   or we can make it manually here
 
 
             // Feature-specific routes
@@ -115,21 +117,20 @@ foreach (config('tenancy.central_domains') as $domain) {
 
 // remains    
 
-
 //  لاختبار الالغاء بشكل سليم ننشئ خطة لمدة يوم واحد فقط ثم نقوم بالالغاء وانتظار النتيجة هل سيتم الغاؤها 
 //  اذا حدث تغيير للخطة يتم الغاء القديمة هنا وعلى السترايب  cancel it in subscription table and it will automatically canceled on stripe
 //  تغيير  بيانات تواريخ نهاية الاشتراك للمشتركين بقاعدة البيانات عند الاشتراك  اول مرة بالبيانات القادمة من سترايب
 
-// handle change and  upgrade subscription 
+// handle change and  upgrade subscription      <===================================  main remains 
 // in planservice check ends at in case of renew
 // check config.queues.php
 // check app =>  mail
 
-
-
+// in plan service cancle subscription /// check if user has many subscriptions comes from cashier  if only one so replace get with first() the modify foreach to handle one item
 
 // search for url('    and fix routes
 // check notificationEmail()
+// check =>  $trialEndsAt = $trialDays > 0 && $tenantSubscriptionExists == null ? Carbon::now()->addDays($trialDays) : null
 
 
 

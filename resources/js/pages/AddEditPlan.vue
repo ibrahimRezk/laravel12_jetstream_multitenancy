@@ -80,7 +80,7 @@ const fillForm = () => {
 };
 
 const addNewSubscription = () => {
-    form.post(`/admin/subscribe`, {
+    form.post( route('admin.tenant.subscribe'), {
         preserveState: true,
         preserveScroll: true,
         onSuccess: () => {

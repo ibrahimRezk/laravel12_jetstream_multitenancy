@@ -29,7 +29,7 @@ class Plan extends Model
         'is_active' => 'boolean'
     ];
 
-    public function subscriptions()
+    public function subscriptions() 
     {
         return $this->hasMany(TenantSubscription::class);
     }

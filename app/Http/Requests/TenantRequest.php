@@ -29,26 +29,26 @@ class TenantRequest extends FormRequest
         $model = $this->id ?? null;  /// this refers to tenant model
         $passwordRule = $model ? ['nullable'] : ['required'];
 
-        
-        $userId = $model ? Tenant::find($model)->ownerId : '' ;
+
+        $userId = $model ? Tenant::find($model)->owner_id : '';
         // dd($userId);
-        $subDomain = $model ? Tenant::find($model)->domains[0]->id : '' ;
+        $subDomain = $model ? Tenant::find($model)->domains[0]->id : '';
 
         return [
 
-            
+
             'name' => ['required', 'string', 'max:255'],
-            
-            
-                'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class, 'email')->ignore($userId ?? null)],
-                // 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-                'subdomain' =>  ['required', 'string', 'alpha', 'max:255', Rule::unique(Domain::class, 'domain')->ignore($subDomain ?? null)],
 
-                // 'password' => ['required', 'string', Password::default(), 'confirmed'],
-                'password' => ['bail', ...$passwordRule, Password::defaults()],
-                'password_confirmation' => ['bail', ...$passwordRule, 'same:password'],
 
-                'plan_id' => ['required', 'exists:plans,id']
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class, 'email')->ignore($userId ?? null)],
+            // 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'subdomain' => ['required', 'string', 'alpha', 'max:255', Rule::unique(Domain::class, 'domain')->ignore($subDomain ?? null)],
+
+            // 'password' => ['required', 'string', Password::default(), 'confirmed'],
+            'password' => ['bail', ...$passwordRule, Password::defaults()],
+            'password_confirmation' => ['bail', ...$passwordRule, 'same:password'],
+
+            'plan_id' => ['required', 'exists:plans,id']
         ];
     }
 }

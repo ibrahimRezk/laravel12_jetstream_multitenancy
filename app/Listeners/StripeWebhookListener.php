@@ -19,13 +19,15 @@ class StripeWebhookListener
         $payload = $event->payload;
 
         match ($payload['type']) {
-            'invoice.paid' => $this->handleInvoicePaid($payload),
+            'checkout.session.completed' => $this->handleCheckoutCompleted($payload),
+            //'customer.subscription.updated' => $this->handleSubscriptionUpdated($payload),  // suitable on case of changing subscription updated or cancelled
+
             default => Log::info('Unhandled webhook event: ' . $payload['type'])
         };
     }
 
 
-    protected function handleInvoicePaid(array $payload)
+    protected function handleCheckoutCompleted(array $payload)
     {
 
         // $planFromStripe = $payload['data']['object']['lines']['data'][0]['plan']; //=======long way 
@@ -48,7 +50,7 @@ class StripeWebhookListener
 
 
             // check in case of first time subscription
-           $planService->subscribeTenant($tenant, $plan);
+            $planService->subscribeTenant($tenant, $plan);
 
             Log::info("Invoice payment succeeded for user: {$user->email}");
         }

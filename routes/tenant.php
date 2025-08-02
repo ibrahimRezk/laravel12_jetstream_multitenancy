@@ -60,7 +60,7 @@ Route::middleware([
     })->name('dashboard');
     
     // Route::get('/dashboard', function () {
-    //     return Inertia::render('TenantSiteDashboard', ['tenantSubscription' => tenant()->currentSubscription(),]);
+    //     return Inertia::render('TenantSiteDashboard', ['tenantSubscription' => tenant()->subscription(),]);
     // })->name('dashboard');
 
 

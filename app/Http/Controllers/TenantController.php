@@ -77,7 +77,7 @@ class TenantController extends Controller
 
 
     //     $tenant = tenant();
-    //     $subscription = $tenant->currentSubscription();
+    //     $subscription = $tenant->subscription();
 
     //     return view('tenant.dashboard', compact('tenant', 'subscription'));
     // }
@@ -85,7 +85,7 @@ class TenantController extends Controller
     // public function subscription(Request $request)
     // {
     //     $tenant = tenant();
-    //     $subscription = $tenant->currentSubscription();
+    //     $subscription = $tenant->subscription();
 
     //     return view('tenant.subscription', compact('tenant', 'subscription'));
     // }

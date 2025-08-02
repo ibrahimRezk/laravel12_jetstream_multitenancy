@@ -5,9 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
-class TenantSubscription extends Model
+class TenantSubscription extends Model  // this to get all subscriptions history for tenant  including current and previous subscriptions
 {
-     use BelongsToTenant;  //// notice this trait
+    use BelongsToTenant;  //// notice this trait
 
     protected $fillable = [
         'tenant_id',
@@ -23,7 +23,7 @@ class TenantSubscription extends Model
 
     protected $casts = [
         'trial_ends_at' => 'datetime',
-        'ends_at' => 'datetime'
+        'ends_at' => 'datetime',
     ];
 
     public function tenant()
@@ -38,8 +38,8 @@ class TenantSubscription extends Model
 
     public function isActive()
     {
-        return $this->status === 'active' && 
-               ($this->ends_at === null || $this->ends_at->isFuture());
+        return $this->status === 'active' &&
+            ($this->ends_at === null || $this->ends_at->isFuture());
     }
 
     public function onTrial()

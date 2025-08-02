@@ -34,7 +34,7 @@ class PlanService
     }
 
 
-    public function subscribeTenant(Tenant $tenant, Plan $plan, $trialDays = null)
+    public function subscribeTenant(Tenant $tenant, Plan $plan, $trialDays = null) // this is for first time subscription and automatic renewal if payment is successful
     {
 
         try {
@@ -43,19 +43,30 @@ class PlanService
                 // Cancel existing subscription if any
                 $this->cancelExistingSubscription($tenant);
 
-                $trialDays = $trialDays ?? $plan->trial_days;
-                $trialEndsAt = $trialDays > 0 ? Carbon::now()->addDays($trialDays) : null;
+                $tenantSubscriptionExists = TenantSubscription::where(['tenant_id' => $tenant->id, 'plan_id' => $plan->id,])->latest()->first(); // means this is not first time so no trial period allowed
 
-                $subscription =  TenantSubscription::updateOrCreate([
+                $trialDays  ?? $plan->trial_days;
+                $trialEndsAt = $trialDays > 0 && $tenantSubscriptionExists == null ? Carbon::now()->addDays($trialDays) : null; // only apply for first period so check subscriptionExists
+
+                $tenantSubscription = TenantSubscription::updateOrCreate([  // important : if we use stripe subscription it will create or update existing subscription
                     'tenant_id' => $tenant->id,
                     'plan_id' => $plan->id,
-                ],[
+                    'id' => $tenant->tenant_subscription_id,
+                ], [
                     'tenant_id' => $tenant->id,
                     'plan_id' => $plan->id,
                     'status' => 'active',
                     'price' => $plan->price,
                     'trial_ends_at' => $trialEndsAt,
-                    'ends_at' => $this->calculateEndDate($plan, $trialEndsAt ),
+                    'ends_at' => $this->calculateEndDate($plan, $trialEndsAt),
+                ]);
+
+
+
+                // update tenant data // important to match tenant subscription on our site and stripe subscription
+                $tenant->update([
+                    'tenant_subscription_id' => $tenantSubscription->id, 
+                    'plan_id' => $plan->id
                 ]);
 
 
@@ -71,17 +82,17 @@ class PlanService
                 Log::info('Tenant subscribed to plan', [
                     'tenant_id' => $tenant->id,
                     'plan_id' => $plan->id,
-                    'subscription_id' => $subscription->id
+                    'subscription_id' => $tenantSubscription->id
                 ]);
 
 
 
-                event(new SubscriptionCreated($subscription));   ///// /////// important ////////////////
+                event(new SubscriptionCreated($tenantSubscription));   ///// /////// important ////////////////
 
 
 
 
-                return $subscription;
+                return $tenantSubscription;
             });
         } catch (\Exception $e) {
             Log::error('Failed to subscribe tenant to plan', [
@@ -93,43 +104,48 @@ class PlanService
         }
     }
 
-    public function cancelSubscription(Tenant $tenant , $cancelType = 'at_the_end')
+    public function cancelSubscription(Tenant $tenant,  $cancelType = 'at_the_end')  // to cancel here and on stripe
     {
         try {
             return DB::transaction(function () use ($tenant, $cancelType) {
 
 
-            $user = $tenant->owner; // Assuming the tenant has an owner user
-            if (!$user) {
-                throw new \Exception('Tenant owner not found');
-            }
-            
-            $subscription = Subscription::where('user_id', $user->id)->where('stripe_status', 'active')->first();
-            $type = $subscription->type;
-            if ($cancelType == 'immediate') {
-                $user->subscription($type)->cancelNow(); // immediate cancel
-            } else {
-                $user->subscription($type)->cancel();  // cancel at the end of subscription and no renewal
-            }            
-            ///////////////////////////////////////////////////////////////////////
+                $user = $tenant->owner; // Assuming the tenant has an owner user
+                if (!$user) {
+                    throw new \Exception('Tenant owner not found');
+                }
 
+                $subscription = Subscription::where('user_id', $user->id)->where('stripe_status', 'active')->first();
 
-
-
-                $subscription = $tenant->currentSubscription();
                 if ($subscription) {
-                    $subscription->update([
+                    $type = $subscription->type;
+                    if ($cancelType == 'immediate') {
+                        $user->subscription($type)->cancelNow(); // immediate cancel
+                    } else {
+                        $user->subscription($type)->cancel();  // cancel at the end of subscription and no renewal
+                    }
+                    ///////////////////////////////////////////////////////////////////////
+                }
+
+                
+                $tenantSubscription = $tenant->currentSubscription();
+                // $tenantSubscription = $tenant->subscription();
+                if ($tenantSubscription) {
+                    $tenantSubscription->update([
                         'status' => 'cancelled',
-                        'ends_at' => Carbon::now()
+                        'ends_at' => Carbon::now(),
                     ]);
 
                     Log::info('Tenant subscription cancelled', [
                         'tenant_id' => $tenant->id,
-                        'subscription_id' => $subscription->id
+                        'subscription_id' => $tenantSubscription->id
                     ]);
                 }
-                return $subscription;
+                return $tenantSubscription;
             });
+
+
+
         } catch (\Exception $e) {
             Log::error('Failed to cancel tenant subscription', [
                 'tenant_id' => $tenant->id,
@@ -139,28 +155,28 @@ class PlanService
         }
     }
 
-    public function renewSubscription(TenantSubscription $subscription)
+    public function renewSubscription(TenantSubscription $tenantSubscription)  // this is for manual renewal  // check not used yet
     {
         try {
-            return DB::transaction(function () use ($subscription) {
-                $plan = $subscription->plan;
-                $newEndDate = $this->calculateEndDate($plan, $subscription->ends_at);
+            return DB::transaction(function () use ($tenantSubscription) {
+                $plan = $tenantSubscription->plan;
+                $newEndDate = $this->calculateEndDate($plan, $tenantSubscription->ends_at);
 
-                $subscription->update([
+                $tenantSubscription->update([
                     'ends_at' => $newEndDate,
                     'status' => 'active'
                 ]);
 
-                Log::info('Subscription renewed', [
-                    'subscription_id' => $subscription->id,
+                Log::info('tenant subscription renewed', [
+                    'tenant_subscription_id' => $tenantSubscription->id,
                     'new_end_date' => $newEndDate
                 ]);
 
-                return $subscription;
+                return $tenantSubscription;
             });
         } catch (\Exception $e) {
             Log::error('Failed to renew subscription', [
-                'subscription_id' => $subscription->id,
+                'tenant_subscription_id' => $tenantSubscription->id,
                 'error' => $e->getMessage()
             ]);
             throw $e;
