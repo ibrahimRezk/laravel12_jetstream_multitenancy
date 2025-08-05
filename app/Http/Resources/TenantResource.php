@@ -36,7 +36,7 @@ class TenantResource extends JsonResource
             'owner' => $owner,
             'subscription' => $subscription,
             'subscriptions' => $subscriptions,
-            'currentSubscriptions' => $curerentSubscription,
+            'currentSubscription' => $curerentSubscription,
             
 
             /// to show all items as one item not nested item  these lines added :

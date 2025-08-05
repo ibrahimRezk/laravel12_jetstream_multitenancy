@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Plan;
+use App\Models\TenantSubscription;
 use App\Models\User;
 use Inertia\Inertia;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
 use App\Services\PlanService;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Cashier\Subscription;
 
 class TenantController extends Controller
 {
@@ -24,10 +27,42 @@ class TenantController extends Controller
      */
     public function index(Request $request)
     {
+        $tenant = auth()->user()->tenants()->first();
+
+        $plan = Plan::find($tenant->plan_id);
+
+        $planChoosed = false;
+        $planPaid = false;
+
+        $tenantSubscription = TenantSubscription::where('tenant_id', $tenant->id)->where('plan_id', $tenant->plan_id)->first();
+
+        if ($tenantSubscription) {
+            $planChoosed = true;
+        }
+
+
+        if($plan != null)
+        {
+            $stripeSubscription = Subscription::where('user_id', auth()->user()->id)
+                ->where('type', $plan->product_id_on_stripe)
+                ->where('stripe_price', $plan->price_id_on_stripe)
+                ->where('stripe_status', '!=', 'canceled')
+                ->first();
+
+                
+                if ($stripeSubscription) {
+                    $planPaid = true;
+                }
+        }
+
+
         try {
             $plans = $this->planService->getAvailablePlans();
             return Inertia::render('Plans', [
                 'type' => $request->type,   /// tyes  select for first time , or change plan
+                'planChoosed' => $planChoosed,
+                'planPaid' => $planPaid,
+                'planId' => $plan->id ?? null,
                 'tenantId' => auth()->user()->tenants[0]?->id ?? null,
                 'plans' => $plans->map(function ($plan) {
                     return [
@@ -72,21 +107,5 @@ class TenantController extends Controller
 
 
 
-    //     public function index(Request $request)
-    // {
 
-
-    //     $tenant = tenant();
-    //     $subscription = $tenant->subscription();
-
-    //     return view('tenant.dashboard', compact('tenant', 'subscription'));
-    // }
-
-    // public function subscription(Request $request)
-    // {
-    //     $tenant = tenant();
-    //     $subscription = $tenant->subscription();
-
-    //     return view('tenant.subscription', compact('tenant', 'subscription'));
-    // }
 }

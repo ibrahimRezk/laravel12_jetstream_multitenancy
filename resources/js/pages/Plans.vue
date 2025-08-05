@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { router, useForm, usePage } from "@inertiajs/vue3";
 import { useSubscription } from "@/composables/useSubscription";
 import Button from "@/components/ui/button/Button.vue";
@@ -16,6 +16,22 @@ const props = defineProps({
         type: Number,
         default: () => 0,
         required: true,
+    },
+    planChoosed: {
+        type: Boolean,
+        default: () => 0,
+        required: false,
+    },
+    planPaid: {
+        type: Boolean,
+        default: () => 0,
+        required: false,
+    },
+
+    planId: {
+        type: Number,
+        default: () => 0,
+        required: 0,
     },
     type: {
         type: String,
@@ -34,6 +50,13 @@ const page = usePage();
 const showModal = ref(false);
 const selectedPlan = ref(null);
 const modalError = ref("");
+
+
+const changePlan = ref(false)
+onMounted(()=> props.planChoosed && props.planPaid ? changePlan.value = true : changePlan.value = false)
+
+
+
 
 // // Form for subscription
 // const form = useForm({
@@ -314,6 +337,14 @@ onUnmounted(() => {
                         </span>
                         <span v-else>Get Started</span>
                     </button>
+
+                    <div class=" flex justify-center">
+                        <button v-if="planId == plan.id && props.planChoosed   && props.planPaid == false" 
+                            class=" bg-black mt-5 font-bold py-1 px-4 rounded-lg "
+                        >
+                            choosed but not paid yet
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -338,8 +369,8 @@ onUnmounted(() => {
                             {{ modalError }}
                         </div>
                         <a
-                            v-if="props.type == null"
-                            :href="route('tenant.checkout', { plan: selectedPlan })"
+                            v-if="props.type == null" 
+                            :href="route('tenant.checkout', { plan_id: selectedPlan.id })"
                         
 
                             target="_blank"

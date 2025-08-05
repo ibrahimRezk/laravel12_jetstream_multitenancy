@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->decimal('price', 12, 2)->default(0);
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->foreignId('plan_id')->constrained()->onDelete('cascade');
-            $table->enum('status', ['active', 'inactive', 'cancelled', 'expired'])->default('active');
+            $table->enum('status', ['active', 'inactive', 'canceled', 'expired'])->default('active');
             $table->timestamp('trial_ends_at')->nullable();
             $table->timestamp('ends_at')->nullable();
             $table->timestamps();

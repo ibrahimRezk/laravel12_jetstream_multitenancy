@@ -17,7 +17,7 @@ class RegisterResponse implements RegisterResponseContract
 
         return $request->wantsJson()
             ? response()->json(['two_factor' => false])
-                : redirect()->intended(route('tenant.dashboard')); // redirect to tenant dashboard       
+                : redirect()->intended(route('dashboard')); // redirect to tenant dashboard       
 
 
 

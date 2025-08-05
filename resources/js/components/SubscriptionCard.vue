@@ -1,5 +1,4 @@
 <script setup>
-
 import { useSubscription } from "@/composables/useSubscription";
 import { onMounted } from "vue";
 
@@ -8,7 +7,7 @@ const props = defineProps({
         type: Object,
         default: null,
     },
-    siteType: String
+    siteType: String,
 });
 
 const emit = defineEmits(["view-plans", "change-plan", "cancel-subscription"]);
@@ -23,7 +22,9 @@ const {
 } = useSubscription();
 
 // onMounted(()=>  init())
-onMounted(()=>  fetchTenantSubscription(props.siteType , props.subscription.tenant_id))
+onMounted(() =>
+    fetchTenantSubscription(props.siteType, props.subscription.tenant_id)
+);
 
 const formatStatus = (status) => {
     return status.charAt(0).toUpperCase() + status.slice(1).replace("_", " ");
@@ -37,7 +38,7 @@ const getStatusBadgeClass = () => {
     switch (status) {
         case "active":
             return "bg-green-100 text-green-800";
-        case "cancelled":
+        case "canceled":
             return "bg-red-100 text-red-800";
         case "expired":
             return "bg-gray-100 text-gray-800";

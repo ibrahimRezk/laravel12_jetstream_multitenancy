@@ -34,13 +34,32 @@ class TenantSubscriptionController extends Controller
             return back()->with('error', 'Tenant not found');
         }
 
-        if ($tenant->hasActiveSubscription()) {
+        // CHECK if the tenant has active subscription on stripe   "subscriptions" table     and here   "tenant_subscriptions" table
+
+        //// stripe subscription 
+        $stripeSubscription = Subscription::where('user_id', auth()->user()->id)->where('stripe_status', 'active')->first();
+
+        /// our site subscription 
+        $newPlan = Plan::find($request->plan_id);
+        $oldPlan = null;
+        if ($stripeSubscription) {
+            $oldPlan = Plan::where('price_id_on_stripe', $stripeSubscription->stripe_price)->first();
+        }
+
+        if ($oldPlan == $newPlan) {
             return back()->with('error', 'Tenant already has an active subscription');
         }
 
+        $changeSubscription = false;  // for upgrade or downgrade 
+        if ($stripeSubscription && $stripeSubscription->stripe_price != $newPlan->price_id_on_stripe) {
+            $changeSubscription = true;
+        }
+
+
         try {
 
-            return PaymentService::processRecurringPayment($request->plan);
+
+            return PaymentService::processRecurringPayment($newPlan, $changeSubscription);
             // after payment success there is webhook event comes from stripe  and stripewebhook listener  and in case of success it will complete subscription in the listener
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -55,6 +74,39 @@ class TenantSubscriptionController extends Controller
                 'message' => 'Failed to subscribe: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+
+    // Route to update payment method
+    public function updatePaymentMethod()
+    {
+        $user = auth()->user();
+
+        // Store the pending upgrade in session
+        $pendingUpgrade = session('pending_upgrade');
+        $returnUrl = $pendingUpgrade
+            ? route('subscription.retry-upgrade')
+            : route('dashboard');
+
+        return $user->redirectToBillingPortal($returnUrl);
+    }
+
+    // Retry the upgrade after payment method update
+    public function retryUpgrade()
+    {
+        $pendingUpgrade = session('pending_upgrade');
+
+        if (!$pendingUpgrade) {
+            return redirect()->route('dashboard')
+                ->with('error', 'No pending upgrade found.');
+        }
+
+        // Clear the session and retry
+        session()->forget('pending_upgrade');
+
+        return PaymentService::processRecurringPayment($pendingUpgrade, true);
+
+        // return $this->changePlan(new Request(['price_id' => $pendingUpgrade]));
     }
 
 
@@ -95,29 +147,6 @@ class TenantSubscriptionController extends Controller
 
             ]);
 
-
-            // return response()->json([
-            //     'success' => true,
-            //     'subscription' => [
-            //         'id' => $subscription->id,
-            //         'tenant_id' => $subscription->tenant_id,
-            //         'plan' => [
-            //             'id' => $subscription->plan->id,
-            //             'name' => $subscription->plan->name,
-            //             'description' => $subscription->plan->description,
-            //             'price' => $subscription->plan->price,
-            //             'currency' => $subscription->plan->currency,
-            //             'interval' => $subscription->plan->interval,
-            //             'features' => $subscription->plan->features
-            //         ],
-            //         'status' => $subscription->status,
-            //         'trial_ends_at' => $subscription->trial_ends_at,
-            //         'ends_at' => $subscription->ends_at,
-            //         'is_active' => $subscription->isActive(),
-            //         'on_trial' => $subscription->onTrial(),
-            //         'created_at' => $subscription->created_at
-            //     ]
-            // ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -145,6 +174,28 @@ class TenantSubscriptionController extends Controller
         // $tenant = Tenant::findOrFail(tenant('id'));
         // Cancel existing subscription
         try {
+            // swap  subscription
+            $subscription = $this->planService->subscribeTenant($tenant, $plan);
+
+            return to_route('dashboard')->with('success', 'changed successfully');
+
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to change subscription: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    public function changeSubscriptionOld(Request $request, Plan $plan)
+    {
+        $tenant = auth()->user()->tenants[0];
+        if (!$tenant) {
+            return back()->with('error', 'Tenant not found');
+        }
+        // $tenant = Tenant::findOrFail(tenant('id'));
+        // Cancel existing subscription
+        try {
             $this->planService->cancelSubscription($tenant);
 
             // Create new subscription
@@ -152,19 +203,7 @@ class TenantSubscriptionController extends Controller
 
             return to_route('dashboard')->with('success', 'changed successfully');
 
-            // return response()->json([
-            //     'success' => true,
-            //     'message' => 'Subscription changed successfully to ' . $plan->name,
-            //     'subscription' => [
-            //         'id' => $subscription->id,
-            //         'tenant_id' => $subscription->tenant_id,
-            //         'plan_name' => $plan->name,
-            //         'status' => $subscription->status,
-            //         'trial_ends_at' => $subscription->trial_ends_at,
-            //         'ends_at' => $subscription->ends_at,
-            //         'created_at' => $subscription->created_at
-            //     ]
-            // ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -177,7 +216,7 @@ class TenantSubscriptionController extends Controller
      * Cancel tenant's subscription
      */
     public function cancelSubscription(Request $request)
-    { 
+    {
         try {
 
 
@@ -198,17 +237,9 @@ class TenantSubscriptionController extends Controller
                 ], 404);
             }
 
-            return back()->with('success', 'cancelled succcessfully');
+            return back()->with('success', 'canceled succcessfully');
 
-            // return response()->json([
-            //     'success' => true,
-            //     'message' => 'Subscription cancelled successfully',
-            //     'subscription' => [
-            //         'id' => $subscription->id,
-            //         'status' => $subscription->status,
-            //         'cancelled_at' => $subscription->updated_at
-            //     ]
-            // ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

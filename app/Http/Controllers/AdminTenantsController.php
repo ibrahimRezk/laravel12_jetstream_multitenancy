@@ -23,7 +23,7 @@ use App\Http\Resources\TenantSubscriptionResource;
 
 class AdminTenantsController extends Controller
 {
-        private string $routeResourceName = 'admin.tenants';
+    private string $routeResourceName = 'admin.tenants';
 
 
     protected $planService;
@@ -37,13 +37,13 @@ class AdminTenantsController extends Controller
     public function index()
     {
         try {
-            $tenants = Tenant::with(['subscription' , 'plan', 'subscriptions', 'owner:id,name,email', 'users:id,name,email'])
+            $tenants = Tenant::with(['subscription', 'plan', 'subscriptions', 'owner:id,name,email', 'users:id,name,email'])
                 ->orderBy('id')
                 // ->get();
                 // ->paginate(1);
                 ->paginate(10)->onEachSide(2)->appends(request()->query());
-                
-                // dd($tenants);
+
+            // dd($tenants);
             $plans = PlanResource::collection(Plan::get());
 
 
@@ -250,11 +250,11 @@ class AdminTenantsController extends Controller
             return redirect()->back()->with('success', 'canceled successfully');
             // return response()->json([
             //     'success' => true,
-            //     'message' => 'Subscription cancelled successfully',
+            //     'message' => 'Subscription canceled successfully',
             //     'subscription' => [
             //         'id' => $subscription->id,
             //         'status' => $subscription->status,
-            //         'cancelled_at' => $subscription->updated_at
+            //         'canceled_at' => $subscription->updated_at
             //     ]
             // ]);
         } catch (\Exception $e) {
@@ -296,9 +296,9 @@ class AdminTenantsController extends Controller
             $domainModel->save();
 
 
-            
+
             // Cancel existing subscription
-            $this->planService->cancelSubscription($tenant );
+            $this->planService->cancelSubscription($tenant);
 
             // Create new subscription
             $this->planService->subscribeTenant($tenant, $plan);

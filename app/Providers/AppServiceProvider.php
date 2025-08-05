@@ -4,8 +4,6 @@ namespace App\Providers;
 
 use Event;
 use Illuminate\Support\ServiceProvider;
-use App\Listeners\StripeWebhookListener;
-use Laravel\Cashier\Events\WebhookReceived;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class AppServiceProvider extends ServiceProvider

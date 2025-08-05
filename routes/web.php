@@ -40,15 +40,24 @@ foreach (config('tenancy.central_domains') as $domain) {
             'auth:sanctum',
             config('jetstream.auth_session'),
             'verified',
-            CheckMainSiteAdminMiddleware::class
         ])->group(function () {
 
-            Route::get('/dashboard', DashboardController::class)->name('dashboard');
-            // Route::get('/dashboard', function () {
-            //     return Inertia::render('AdminDashboard');
-            // })->name('dashboard');
+            // Route::get('/dashboard', DashboardController::class)->name('dashboard')->middleware(CheckMainSiteAdminMiddleware::class);
+            Route::get('/dashboard', function () {
 
-            /////////////////////////////// admin part ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                if (auth()->user()->main_site_admin == true) {
+                    return Inertia::render('AdminDashboard');
+                } else {
+                    return Inertia::render('TenantDashboard');
+                }
+            })->name('dashboard');
+
+
+
+
+
+
+            /////////////////////////////// admin part /////////////////////////////////////////////////////////////////////////////////////////////////
             // admin controle  Tenant subscriptions
             Route::get('/admin/tenants', [AdminTenantsController::class, 'index'])->name('admin.tenants');
             // Route::get('/admin/tenant/{tenantId}/subscription', [AdminTenantsController::class, 'getTenantSubscription'])->name('admin.getTenantSubscription');
@@ -62,43 +71,26 @@ foreach (config('tenancy.central_domains') as $domain) {
             Route::post('/admin/store-purchase-plans', [AdminPlanController::class, 'store'])->name('admin.plans.store');
             Route::put('/admin/update-purchase-plans/{plan}', [AdminPlanController::class, 'update'])->name('admin.plans.update');
             Route::delete('/admin/delete-purchase-plans/{plan}', [AdminPlanController::class, 'destroy'])->name('admin.plans.destroy');
-
-
-        });
-        ///////////////////////////////end of admin part ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            ///////////////////////////////end of admin part /////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-        /////////////////////////////// tenant part ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        /////// for tenants on the main site   .... add middleware to let only tenant owner to access here /////////////////////////////////////////////////////////////////
-        Route::middleware([
-            'web',
-            'auth:sanctum',
-            config('jetstream.auth_session'),
-            'verified',
-        ])->group(function () {
-            Route::get('/tenant/dashboard', function () {
-                // dd(User::find(2)->payload['data']['object']['lines']['data'][0]['plan']); //========================
-                // $plan = $payload['data']['object']['lines']['data']; //========================
+            /////////////////////////////// tenant part  for tenants on the main site   .... add middleware to let only tenant owner to access here /////////////////////////////////////////
 
 
-                return Inertia::render('TenantDashboard');
-            })->name('tenant.dashboard');
 
             Route::get('/tenant/purchase-plans', [TenantController::class, 'index'])->name('tenant.plans');
             Route::get('addUser', [TenantController::class, 'addUser'])->name('tenant.addUser');/// temporarly for testing     tobe deleted
-
 
             Route::get('/tenant/checkout', [TenantSubscriptionController::class, 'checkout'])->name('tenant.checkout');
             Route::get('/tenant/subscription', [TenantSubscriptionController::class, 'getTenantSubscription'])->name('tenant.getTenantSubscription');
             Route::get('tenantSubscriptionDetails', [TenantSubscriptionController::class, 'tenantSubscriptionDetails'])->name('tenantSubscriptionDetails');
             Route::put('/tenant/subscription/{plan}/{tenant}', [TenantSubscriptionController::class, 'changeSubscription'])->name('tenant.changeSubscription');
             Route::delete('/tenant/cancel_subscription', [TenantSubscriptionController::class, 'cancelSubscription'])->name('tenant.cancelSubscription');
+            Route::get('/payment/update', [TenantSubscriptionController::class, 'updatePaymentMethod'])->name('payment.update'); // for cashier stripe
 
+            Route::get('/subscription/retry-upgrade', [TenantSubscriptionController::class, 'retryUpgrade'])->name('subscription.retry-upgrade'); // for cashier stripe
 
-            // Route::get('/tenant/subscribe', [TenantSubscriptionController::class, 'subscribe'])->name('tenant.subscribe');// this will be done after checkout ... code in listenrs folder
-            // Route::get('/tenant/renew_subscription/{supscriptionId}', [TenantSubscriptionController::class, 'renewSubscription'])->name('tenant.renew_subscription');  // this will be done automatically on stripe   or we can make it manually here
 
 
             // Feature-specific routes
@@ -107,7 +99,7 @@ foreach (config('tenancy.central_domains') as $domain) {
             })->middleware('check.subscription:advanced_features')->name('tenant.advanced');
 
         });
-        /////////////////////////////// end of tenant part ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////// end of tenant part ///////////////////////////////////////////////////////////////////////////////////////////
 
     });
 
@@ -115,16 +107,36 @@ foreach (config('tenancy.central_domains') as $domain) {
 
 
 
+
+
+
+
+
+
 // remains    
 
+// check config.queues.php
+
+// chargeUpgradePaymentMethod   => register as a new tenant and check swap   add begin transactions in checkout method to prevent saving data on error
+
+// event(new SubscriptionCreated($tenantSubscription));  /// replace with subscription updated
+
+
+// add payment status in admin tenants table
+
+// check retryUpgrade method
+
+// prevent admin from access to tenants/dashboard
+
+//  في حالة تسجيل مشترك جديد من صفحة المدير العام يتم تسجيله ولكن عملية الدفع تتم من طرف المشترك نفسه وهنا  في صفحة المشترك اذا كان مسجل من قبل ولم يدفع نفتح له صفحة الدفع الآن 
+
 //  لاختبار الالغاء بشكل سليم ننشئ خطة لمدة يوم واحد فقط ثم نقوم بالالغاء وانتظار النتيجة هل سيتم الغاؤها 
+
 //  اذا حدث تغيير للخطة يتم الغاء القديمة هنا وعلى السترايب  cancel it in subscription table and it will automatically canceled on stripe
 //  تغيير  بيانات تواريخ نهاية الاشتراك للمشتركين بقاعدة البيانات عند الاشتراك  اول مرة بالبيانات القادمة من سترايب
 
-// handle change and  upgrade subscription      <===================================  main remains 
-// in planservice check ends at in case of renew
-// check config.queues.php
 // check app =>  mail
+// check // Payment failed - redirect to update payment method
 
 // in plan service cancle subscription /// check if user has many subscriptions comes from cashier  if only one so replace get with first() the modify foreach to handle one item
 
@@ -145,6 +157,12 @@ foreach (config('tenancy.central_domains') as $domain) {
 
 
 
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 // list of files with changes 
@@ -297,6 +315,9 @@ foreach (config('tenancy.central_domains') as $domain) {
 
 
 
+
+
+
 // notice this code const 
 // tenants = toRef(props , 'tenants');
 // const data = computed(()=>  tenants.value.data) it must be like this to let table accept data because it is not accepting data.data witch comes from pagination
@@ -319,7 +340,8 @@ foreach (config('tenancy.central_domains') as $domain) {
 
 
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 

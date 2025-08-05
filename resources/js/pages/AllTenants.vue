@@ -133,7 +133,7 @@ const tenants = toRef(props, "tenants");
 
 const columns = [
     // no need for select all
-    // {  
+    // {
     //     id: "select", // this  for show specefic items or hid them from top right column menu
     //     header: ({ table }) =>
     //         h(Checkbox, {
@@ -155,9 +155,8 @@ const columns = [
     // },
     {
         accessorKey: "#",
-         header: "#",
-        cell: ({ row }) =>
-            h("div", { class: "capitalize" }, row.index + 1),
+        header: "#",
+        cell: ({ row }) => h("div", { class: "capitalize" }, row.index + 1),
     },
     {
         accessorKey: "name",
@@ -254,14 +253,15 @@ const columns = [
             const actions = [
                 {
                     name: "edit subscription",
-                    action: "changeSubscription",
+                    action: "editSubscription",
                     show: true,
                 },
                 {
                     name: "cancel subscription",
                     action: "cancelSubscription",
-                    show:
-                        row.original.plan ? row.original.plan.status != "cancelled" : false,
+                    show: row.original.plan
+                        ? row.original.status != "canceled"
+                        : false,
                 },
             ];
 
@@ -269,11 +269,12 @@ const columns = [
                 actions,
                 onExpand: row.toggleExpanded,
                 row: row.original,
-                // showTriger: row.original.subscriptions.at(-1).status != 'cancelled',
-                onChangeSubscription: (rowData) =>
-                    handleChangeSubscription(rowData),
+                // showTriger: row.original.subscriptions.at(-1).status != 'canceled',
+                // showTriger: row.original.currentSubscription?.status != 'canceled',
+                onEditSubscription: (rowData) =>
+                    handleEditSubscription(rowData),
                 onCancelSubscription: (rowData) =>
-                    handleCancelSuvbscription(rowData),
+                    handleCancelSubscription(rowData),
             });
         },
     },
@@ -285,14 +286,14 @@ const isDialogOpen = ref(false);
 //     action.value = 'view'
 
 // }
-const handleChangeSubscription = (row) => {
+const handleEditSubscription = (row) => {
     tenant.value = row;
     isDialogOpen.value = true;
     action.value = "edit";
 };
 
 const isAlertDialogOpen = ref(false);
-const handleCancelSuvbscription = (row) => {
+const handleCancelSubscription = (row) => {
     isAlertDialogOpen.value = true;
     itemsToBeDeleted.value = row.id; // tenant id
 };

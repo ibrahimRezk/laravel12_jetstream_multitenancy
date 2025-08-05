@@ -70,7 +70,7 @@ const fillForm = () => {
     // form.password = props.item?.user?.password
     // form.password_confirmation = props.item?.user?.password_confirmation
     form.subdomain = props.item?.domains[0].domain;
-    form.plan_id = props.item?.subscription?.plan?.id;
+    form.plan_id = props.item?.currentSubscription?.plan_id;
 
     // Object.keys(form).forEach((key) => {
     //     item[key] !== undefined && key !== "name"

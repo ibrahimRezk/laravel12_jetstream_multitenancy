@@ -17,7 +17,6 @@ class DashboardController extends Controller
         if (auth()->user()->main_site_admin == true) {
             return Inertia::render('AdminDashboard');
         } else {
-            dd(tenant('id'));
             return Inertia::render('TenantDashboard');
         }
     }

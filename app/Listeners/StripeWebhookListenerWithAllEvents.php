@@ -29,6 +29,7 @@ class StripeWebhookListenerWithAllEvents
     //         'invoice.payment_succeeded' => $this->handleInvoicePaymentSucceeded($payload),
     //         'invoice.payment_failed' => $this->handleInvoicePaymentFailed($payload),
     //         'invoice.paid' => $this->handleInvoicePaid($payload),
+    //         'checkout.session.completed' => $this->handleSessionCompleted($payload),
     //         default => Log::info('Unhandled webhook event: ' . $payload['type'])
     //     };
     // }
@@ -36,6 +37,52 @@ class StripeWebhookListenerWithAllEvents
     /**
      * Handle checkout session completed
      */
+
+
+    
+    private function extractPlanData(array $subscription): array
+    {
+        $plans = [];
+        
+        foreach ($subscription['items']['data'] as $item) {
+            $price = $item['price'];
+            $product = $price['product'];
+            
+            $plans[] = [
+                'subscription_item_id' => $item['id'],
+                'price_id' => $price['id'],
+                'product_id' => is_string($product) ? $product : $product['id'],
+                'product_name' => is_array($product) ? $product['name'] : null,
+                'amount' => $price['unit_amount'],
+                'currency' => $price['currency'],
+                'interval' => $price['recurring']['interval'] ?? null,
+                'interval_count' => $price['recurring']['interval_count'] ?? null,
+                'quantity' => $item['quantity'],
+                'metadata' => $price['metadata'] ?? [],
+            ];
+        }
+        
+        return [
+            'subscription_id' => $subscription['id'],
+            'customer_id' => $subscription['customer'],
+            'status' => $subscription['status'],
+            'current_period_start' => $subscription['current_period_start'],
+            'current_period_end' => $subscription['current_period_end'],
+            'trial_end' => $subscription['trial_end'],
+            'plans' => $plans,
+            'metadata' => $subscription['metadata'] ?? [],
+        ];
+    }
+
+
+
+
+
+
+
+
+
+
     protected function handleCheckoutCompleted(array $payload): void
     {
         $session = $payload['data']['object'];
@@ -99,7 +146,7 @@ class StripeWebhookListenerWithAllEvents
     }
 
     /**
-     * Handle subscription deleted/cancelled
+     * Handle subscription deleted/canceled
      */
     protected function handleSubscriptionDeleted(array $payload): void
     {
@@ -109,14 +156,14 @@ class StripeWebhookListenerWithAllEvents
 
         if ($user) {
             $user->update([
-                'subscription_status' => 'cancelled',
+                'subscription_status' => 'canceled',
                 'subscription_ended_at' => now(),
             ]);
 
             // Send cancellation notification
-            // $user->notify(new SubscriptionCancelledNotification());
+            // $user->notify(new SubscriptioncanceledNotification());
 
-            Log::info("Subscription cancelled for user: {$user->email}");
+            Log::info("Subscription canceled for user: {$user->email}");
         }
     }
 

@@ -77,6 +77,14 @@ const breadcrumbs = [
                     >
                     choose a paln <span class=" text-red-500">..........(only view if no subscription)</span>
                 </Button>
+
+                    <Button variant="outline" v-show="!props.tenantSubscription"
+                    @click="changePlan('tenant')"
+                    class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:cursor-pointer"
+                    >
+                    change paln ( upgrade or downgrade ) <span class=" text-red-500">..........(only view if he has a subscription)</span>
+                </Button>
+
                 <!-- :href="route('tenant.getTenantSubscription')" -->
                 <Button v-show="props.tenantSubscription" variant="outline" 
                 @click="fetchTenantSubscription('tenant' ,props.tenantSubscription?.tenant_id )"

@@ -38,6 +38,11 @@ class User extends Authenticatable
         'email',
         'main_site_admin',
         'password',
+
+
+        'create', /// to be removed
+        'edit', /// to be removed
+        'pay', /// to be removed
     ];
 
 
@@ -81,6 +86,9 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'main_site_admin' => 'boolean',
+            'create' => 'array',
+            'edit' => 'array',
+            'pay' => 'array',
         ];
     }
 }
